@@ -1282,7 +1282,7 @@ void main()
 	vec3 irradiance = ComputeSHIrradiance( N, sh );
 	
 	
-	gl_FragColor = irradiance;
+	gl_FragColor.xyz = irradiance;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
