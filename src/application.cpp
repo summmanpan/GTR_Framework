@@ -73,7 +73,7 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 
 
 	scene = new GTR::Scene();
-	if (!scene->load("data/scene_sponza.json"))
+	if (!scene->load("data/scene_test1.json"))
 		exit(1);
 
 	camera->lookAt(scene->main_camera.eye, scene->main_camera.center, Vector3(0, 1, 0));
@@ -92,9 +92,9 @@ Application::Application(int window_width, int window_height, SDL_Window* window
     
 	//Probe grid
     //Vector3 dim(8, 6, 12);
-    Vector3 dim(6, 2, 8);
-    Vector3 start_pos(-470, 60, -100);
-    Vector3 end_pos(470, 150, 100);
+    Vector3 dim(8, 4, 8);
+    Vector3 start_pos(-900, 20, -900);
+    Vector3 end_pos(900, 400, 900);
     renderer->createProbeGrid(dim, start_pos, end_pos);
     renderer->placingProbes();
 
@@ -400,6 +400,7 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
             break;
             
         case SDLK_z: renderer->show_irradiance = !renderer->show_irradiance; break;
+        case SDLK_3: renderer->show_probes = !renderer->show_probes; break;
 
 	}
 

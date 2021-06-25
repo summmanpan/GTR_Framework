@@ -42,6 +42,7 @@ GTR::Renderer::Renderer()
 	this->show_ao_deferred = false;
     this->updateIrradiance = true; // It should be set to true if there is a movement of an object to update the irradiance
     this->show_irradiance = true;
+    this->show_probes = true;
 	
 	//FrameBufferObject
 	
@@ -146,28 +147,9 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 
 		//applyfinalHDR();
 		
-		//gbuffers_fbo.color_textures[0]->toViewport(Shader::Get("showAlpha"));
-            
-        // Cloning the gbuffers depth buffer to the screen framebuffer
-        // For the case that we need to draw new geometry. For instance, draw the
-        // probes spheres
-        this->gbuffers_fbo.depth_texture->copyTo(NULL);
+		//gbuffers_fbo.color_textures[0]->toViewport(Shader::Get("showAlpha"));        
 
 	}
-        
-    if (show_irradiance){
-        updateIrradianceCache(scene);
-        //renderProbesGrid(); // to render on the screen to visualize it
-        Mesh* quad = Mesh::getQuad();
-        Shader* shader = Shader::Get("irradiance_sh");
-        uploadIrradianceUniforms(shader, camera);
-        glDisable(GL_DEPTH_TEST);
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_ONE, GL_ONE);
-        quad->render(GL_TRIANGLES);
-        glDisable(GL_BLEND);
-        glEnable(GL_DEPTH_TEST);
-    }
 
 	
 	/*
@@ -486,22 +468,26 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 		
 		//glBlendFunc(GL_ONE, GL_ZERO);
 	}
-
-	//stop rendering to the fbo
-	illumination_fbo.unbind();
     
     // Disabling CULL FACE
     glDisable(GL_CULL_FACE);
     // Setting back to render the front face
-	glFrontFace(GL_CCW);
+    glFrontFace(GL_CCW);
     // Disabling the depth test
     glDisable(GL_DEPTH_TEST);
     // Setting back to less depth test function
-	glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LESS);
     //now we can activate writing to depth buffer
     glDepthMask(true);
     // Disabling blending
     glDisable(GL_BLEND);
+    
+    // Render Irradiance
+    renderIrradiance(scene, camera);
+
+	//stop rendering to the fbo
+	illumination_fbo.unbind();
+    
 	
 }
 
@@ -1218,7 +1204,7 @@ void Renderer::uploadIrradianceUniforms(Shader* shader, Camera* camera) {
 	shader->enable();
 
 	shader->setUniform("u_irr_start", probe_start_pos);
-	shader->setUniform("u_irr_end", probe_start_pos);
+	shader->setUniform("u_irr_end", probe_end_pos);
 	shader->setUniform("u_irr_normal_distance", irr_normal_distance);
 	shader->setUniform("u_irr_delta", probe_delta);
 	shader->setUniform("u_irr_dims", probe_dim);
@@ -1234,8 +1220,31 @@ void Renderer::uploadIrradianceUniforms(Shader* shader, Camera* camera) {
     shader->setUniform("u_inverse_viewprojection", inv_vp);
     shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, GTR::eChannels::DEPTH); // We use the depth texture to reconstruct the 3D world position in the shader
     shader->setTexture("u_normal_texture", gbuffers_fbo.color_textures[1], GTR::eChannels::NORMAL);
-    shader->setTexture("u_color_texture", gbuffers_fbo.color_textures[0], GTR::eChannels::NORMAL);
+    shader->setTexture("u_color_texture", gbuffers_fbo.color_textures[0], GTR::eChannels::ALBEDO);
 
+}
+
+void Renderer::renderIrradiance(Scene* scene, Camera* camera){
+    updateIrradianceCache(scene);
+    
+    if (!show_irradiance){
+        return;
+    }
+    Mesh* quad = Mesh::getQuad();
+    Shader* shader = Shader::Get("irradiance_sh");
+    uploadIrradianceUniforms(shader, camera);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    quad->render(GL_TRIANGLES);
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    
+    // to render the probes on the screen to visualize it
+    if(!show_probes){
+        return;
+    }
+    renderProbesGrid();
 }
 
 

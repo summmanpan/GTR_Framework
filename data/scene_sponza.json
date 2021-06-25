@@ -27,7 +27,7 @@
 			"target": [ -909, 39, 8 ],
 			"angle": -45,
 			"color": [ 1, 0.9, 0.8 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 1000,
 			"cone_angle": 45,
 			"cone_exp": 60,
@@ -42,7 +42,7 @@
 			"target": [ 909, 39, 8 ],
 			"angle": 45,
 			"color": [ 1, 0.9, 0.8 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 1000,
 			"cone_angle": 45,
 			"cone_exp": 60,
@@ -56,7 +56,7 @@
 			"position": [ 0, 50, 0 ],
 			"angle": 0,
 			"color": [ 0.5, 0.5, 0.01 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
@@ -66,7 +66,7 @@
 			"position": [ 180, 50, 0 ],
 			"angle": 0,
 			"color": [ 0.5, 0.5, 0.01 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
@@ -76,7 +76,7 @@
 			"position": [ -180, 50, 0 ],
 			"angle": 0,
 			"color": [ 0.5, 0.5, 0.01 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
@@ -86,17 +86,17 @@
 			"position": [ 0, 50, 160 ],
 			"angle": 0,
 			"color": [ 0.01, 0.5, 0.5 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
 		{
 			"name": "pointlight5",
 			"type": "LIGHT",
-			"position": [ 180, 50, 160 ],
+			"position": [ 180, 90, 160 ],
 			"angle": 0,
 			"color": [ 0.01, 0.5, 0.5 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
@@ -106,7 +106,7 @@
 			"position": [ -180, 50, 160 ],
 			"angle": 0,
 			"color": [ 0.01, 0.5, 0.5 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
@@ -116,7 +116,7 @@
 			"position": [ 0, 50, -160 ],
 			"angle": 0,
 			"color": [ 0.01, 0.5, 0.01 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
@@ -126,7 +126,7 @@
 			"position": [ 180, 50, -160 ],
 			"angle": 0,
 			"color": [ 0.01, 0.5, 0.01 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
@@ -136,7 +136,7 @@
 			"position": [ -180, 50, -160 ],
 			"angle": 0,
 			"color": [ 0.01, 0.5, 0.01 ],
-			"intensity": 10,
+			"intensity": 30,
 			"max_dist": 150,
 			"light_type": "POINT"
 		},
