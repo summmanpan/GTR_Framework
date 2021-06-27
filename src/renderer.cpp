@@ -37,6 +37,7 @@ GTR::Renderer::Renderer()
 	this->pipeline_mode = GTR::ePipelineMode::DEFERRED;
 	this->rendering_shadowmap = false;
 	this->update_shadowmaps = true;
+	this->show_shadowmap = false;
 	this->show_gbuffers = false;
 	this->show_ao = false;
 	this->show_ao_deferred = false;
@@ -200,8 +201,8 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 	createShadowmap(scene, camera);
 	*/
 
-	
-	showShadowmap(camera);
+	if(show_shadowmap)
+		showShadowmap(camera);
 }
 
 
@@ -438,6 +439,7 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 	
 	shader->setUniform("u_ao_show", show_ao_deferred);
 	shader->setUniform("u_camera_position", camera->eye);
+
 
 	Matrix44 inv_vp = camera->viewprojection_matrix;
 	inv_vp.inverse();

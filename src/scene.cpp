@@ -192,7 +192,7 @@ GTR::LightEntity::LightEntity() {
 	this->spot_exp = 0;
 	this->area_size = 0;
 	this->shadow_fbo = NULL;
-	this->shadow_bias = 0.00001;
+	this->shadow_bias = 0.027;
 	this->cast_shadows = false;
 	
 	this->light_camera = new Camera();
@@ -222,12 +222,9 @@ void GTR::LightEntity::uploadToShader(Shader* sh)
 	sh->setUniform("u_shadow_viewproj", this->light_camera->viewprojection_matrix);
 	sh->setUniform("u_shadow_map", this->shadow_fbo->depth_texture, GTR::eChannels::DEPTH_SHADOW);///
 	sh->setUniform("u_shadow_bias", this->shadow_bias);
-	
-	
+	//sh->setUniform("u_cast_shadows", this->cast_shadows);
+
 }
-
-
-
 
 void GTR::LightEntity::configure(cJSON* json)
 {
@@ -329,21 +326,21 @@ void GTR::LightEntity::renderInMenu()
 		if (this->light_type == DIRECTIONAL) {
 			ImGui::SliderFloat("Intensity", &intensity, 0, 20);
 			ImGui::SliderFloat("Area size", &area_size, 0, 250);
+			ImGui::SliderFloat("Bias factor", &shadow_bias, 0, 1);
 		}
-
-		if (this->light_type == POINT) {
+		else if (this->light_type == POINT) {
 			ImGui::SliderFloat("Max dist", &max_dist, 0, 1000);
 			ImGui::SliderFloat("Intensity", &intensity, 0, 20);
 		}
-
-		if (this->light_type == SPOT) {
+		else if (this->light_type == SPOT) {
 			ImGui::SliderFloat("Max dist", &max_dist, 0, 1000);
 			ImGui::SliderFloat("Intensity", &intensity, 0, 20);
 			ImGui::SliderFloat("Spot exp", &spot_exp, 0, 30);
 			ImGui::SliderFloat("Spot cutoff", &cone_angle, 0, 90);
-
+			ImGui::SliderFloat("Bias factor", &shadow_bias, 0, 1);
 		}
 		
+
 	#endif
 }
 

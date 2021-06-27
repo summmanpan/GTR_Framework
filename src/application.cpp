@@ -25,7 +25,7 @@ GTR::BaseEntity* selected_entity = nullptr;
 FBO* fbo = nullptr;
 Texture* texture = nullptr;
 
-float cam_speed = 10;////
+float cam_speed = 20;
 
 Mesh mesh;
 
@@ -197,8 +197,6 @@ void Application::update(double seconds_elapsed)
 	if (Input::isKeyPressed(SDL_SCANCODE_A) || Input::isKeyPressed(SDL_SCANCODE_LEFT)) camera->move(Vector3(1.0f, 0.0f, 0.0f) * speed);
 	if (Input::isKeyPressed(SDL_SCANCODE_D) || Input::isKeyPressed(SDL_SCANCODE_RIGHT)) camera->move(Vector3(-1.0f, 0.0f, 0.0f) * speed);
 
-	
-
 
 	//mouse input to rotate the cam
 	#ifndef SKIP_IMGUI
@@ -321,7 +319,7 @@ void Application::renderDebugGUI(void)
 	ImGui::ColorEdit3("BG color", scene->background_color.v);
 	ImGui::ColorEdit3("Ambient Light", scene->ambient_light.v);
 	ImGui::Combo("Pipeline", (int*) &renderer->pipeline_mode, "FORWARD\0DEFERRED\0", 2);
-	ImGui::Checkbox("UPDATE_SHADOWMAPS", &renderer->update_shadowmaps);
+	ImGui::Checkbox("SHOW_SHADOWMAPS", &renderer->show_shadowmap);
 	ImGui::Checkbox("SHOW_GBUFFERS", &renderer->show_gbuffers);
 	ImGui::Checkbox("SHOW_AO", &renderer->show_ao);
 	ImGui::Checkbox("SHOW_AO_DEFERRED", &renderer->show_ao_deferred);
