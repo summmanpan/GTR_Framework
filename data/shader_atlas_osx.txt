@@ -873,50 +873,6 @@ void main()
 	gl_FragData[0] = vec4(color, 1.0 ) ;
 	
 }
-// -------------------------------------------------------------------------------------------------------------------------
-
-//float find_probe_row_of_texture(vec3 v_world_position, vec3 u_irr_end, vec3 u_irr_start, vec3 N, vec3 u_irr_normal_distance, vec3 u_irr_delta, vec3 u_irr_dims, int u_num_probes )
-\find_probe_row_of_texture
-
-//computing nearest probe index based on world position
-
-vec3 irr_range = u_irr_end - u_irr_start;
-
-vec3 irr_local_pos = clamp( world_position - u_irr_start 	+ N * u_irr_normal_distance, vec3(0.0), irr_range );
-
-//convert from world pos to grid pos
-vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
-
-//round values as we cannot fetch between rows for now
-vec3 local_indices = floor(irr_norm_pos + 0.5); //round( irr_norm_pos ); Lo sustituyo por esta función ya que en OpenGL 2.1 no hay la función round()
-
-//compute in which row is the probe stored
-float row = local_indices.x + local_indices.y * u_irr_dims.x + local_indices.z * u_irr_dims.x * u_irr_dims.y;
-
-//find the UV.y coord of that row in the probes texture
-float row_uv = (row + 1.0) / (u_num_probes + 1.0); 
-
-
-	//return row_uv;
-	
-
-\get_irradiance
-
-	SH9Color sh;
-	
-	
-	#include "find_probe_row_of_texture"
-	
-	//fill the coefficients
-	const float d_uvx = 1.0 / 9.0;
-	for(int i = 0; i < 9; ++i)
-	{
-		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
-		sh.c[i] = texture2D( u_probes_texture, coeffs_uv ).xyz;
-	}
-
-	vec4 irradiance = vec4( ComputeSHIrradiance( N, sh ) , 1.0);
-
 
 \deferred_ws.fs
 
@@ -1168,6 +1124,118 @@ vec3 ComputeSHIrradiance(in vec3 normal, in SH9Color sh)
 	return irradiance;
 }
 
+// _________________________________________________________________________________________________________________________________
+\get_irradiance_functions
+
+vec3 computeNearestProbeIndex(vec3 u_irr_start, vec3 u_irr_end, vec3 u_irr_delta, vec3 world_position, float u_irr_normal_distance, vec3 N){
+	//computing nearest probe index based on world position
+
+	vec3 irr_range = u_irr_end - u_irr_start;
+
+	vec3 irr_local_pos = clamp( world_position - u_irr_start + N * u_irr_normal_distance, vec3(0.0), irr_range );
+
+	//convert from world pos to grid pos
+	vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
+
+	return irr_norm_pos;
+}
+
+float findProbeRowOfTexture( vec3 local_indices, vec3 u_irr_dims,  float u_num_probes){
+
+	//compute in which row is the probe stored
+	float row = local_indices.x + local_indices.y * u_irr_dims.x + local_indices.z * u_irr_dims.x * u_irr_dims.y;
+
+	//find the UV.y coord of that row in the probes texture
+	float row_uv = (row + 1.0) / (u_num_probes + 1.0); 
+
+
+	return row_uv;
+}
+
+vec3 getIrradiance(vec3 local_indices, vec3 u_irr_dims, float u_num_probes, sampler2D u_probes_texture, vec3 N){
+	
+	float row_uv = findProbeRowOfTexture(local_indices, u_irr_dims, u_num_probes); 
+
+	//fill the coefficients
+	SH9Color sh;
+
+	const float d_uvx = 1.0 / 9.0;
+	
+	for(int i = 0; i < 9; ++i)
+	{
+		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
+		sh.c[i] = texture2D( u_probes_texture, coeffs_uv ).xyz;
+	}
+
+	vec3 irradiance = ComputeSHIrradiance( N, sh );
+
+	return irradiance;
+}
+
+vec3 getIrradianceInterpolated(vec3 local_indices, vec3 irr_norm_pos, vec3 u_irr_dims, float u_num_probes, sampler2D u_probes_texture, vec3 N){
+	//now we have the interpolation factors
+	vec3 factors = irr_norm_pos - local_indices; 
+
+	//local_indices points to Left, Bottom, Far
+	vec3 indicesLBF = local_indices;
+
+	// local_indices points Right, Bottom, Far
+	vec3 indicesRBF = local_indices;
+	indicesRBF.x += 1.0; //from left to right
+	
+	// local_indices points Left, Top, Far
+	vec3 indicesLTF = local_indices;
+	indicesLTF.y += 1.0;
+	
+	// local_indices points Right, Top, Far
+	vec3 indicesRTF = local_indices;
+	indicesRTF.x += 1.0;
+	indicesRTF.y += 1.0;
+	
+	// local_indices points Left, Bottom, Near
+	vec3 indicesLBN = local_indices;
+	indicesLBN.z += 1.0;
+	
+	// local_indices points Right, Bottom, Near
+	vec3 indicesRBN = local_indices;
+	indicesRBN.x += 1.0;
+	indicesRBN.z += 1.0;
+
+	// local_indices points Left, Top, Near
+	vec3 indicesLTN = local_indices;
+	indicesLTN.y += 1.0;
+	indicesLTN.z += 1.0;
+
+	
+	// local_indices points Right, Top, Near
+	vec3 indicesRTN = local_indices;
+	indicesRTN.x += 1.0;
+	indicesRTN.y += 1.0;
+	indicesRTN.z += 1.0;
+
+	//compute irradiance for every corner
+	vec3 irrLBF = getIrradiance( indicesLBF, u_irr_dims, u_num_probes, u_probes_texture, N );
+	vec3 irrRBF = getIrradiance( indicesRBF, u_irr_dims, u_num_probes, u_probes_texture, N );
+	vec3 irrLTF = getIrradiance( indicesLTF, u_irr_dims, u_num_probes, u_probes_texture, N );
+	vec3 irrRTF = getIrradiance( indicesRTF, u_irr_dims, u_num_probes, u_probes_texture, N );
+	vec3 irrLBN = getIrradiance( indicesLBN, u_irr_dims, u_num_probes, u_probes_texture, N );
+	vec3 irrRBN = getIrradiance( indicesRBN, u_irr_dims, u_num_probes, u_probes_texture, N );
+	vec3 irrLTN = getIrradiance( indicesLTN, u_irr_dims, u_num_probes, u_probes_texture, N );
+	vec3 irrRTN = getIrradiance( indicesRTN, u_irr_dims, u_num_probes, u_probes_texture, N );
+
+	vec3 irrTF = mix( irrLTF, irrRTF, factors.x );
+	vec3 irrBF = mix( irrLBF, irrRBF, factors.x );
+	vec3 irrTN = mix( irrLTN, irrRTN, factors.x );
+	vec3 irrBN = mix( irrLBN, irrRBN, factors.x );
+
+	vec3 irrT = mix( irrTF, irrTN, factors.z );
+	vec3 irrB = mix( irrBF, irrBN, factors.z );
+
+	vec3 irradiance = mix( irrB, irrT, factors.y );
+	
+	return irradiance;
+}
+
 
 \probe.fs
 
@@ -1177,7 +1245,6 @@ varying vec3 v_normal;
 
 #include "get_SHs_functions"
 uniform vec3 u_coeffs[9];
-// #include "get_irradiance_uniforms"
 
 //out vec4 FragColor;
 
@@ -1212,10 +1279,10 @@ void main()
 	}
 	*/
 
-	vec4 irradiance = vec4( ComputeSHIrradiance( N, sh ) , 1.0);
+	vec3 irradiance = ComputeSHIrradiance( N, sh );
 	
 	
-	gl_FragColor = irradiance;
+	gl_FragColor.xyz = irradiance;
 }
 
 // -------------------------------------------------------------------------------------------------------------------------
@@ -1227,6 +1294,7 @@ void main()
 //varying vec3 v_uv;
 
 #include "get_SHs_functions"
+#include "get_irradiance_functions"
 #include "get_irradiance_uniforms"
 
 uniform vec2 u_iRes;
@@ -1254,18 +1322,15 @@ void main()
 	vec4 proj_worldpos = u_inverse_viewprojection * screen_pos;
 	vec3 world_position = proj_worldpos.xyz / proj_worldpos.w ;
 
-	SH9Color sh;
-	#include "find_probe_row_of_texture"
-	
-	//fill the coefficients
-	const float d_uvx = 1.0 / 9.0;
-	for(int i = 0; i < 9; ++i)
-	{
-		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
-		sh.c[i] = texture2D( u_probes_texture, coeffs_uv ).xyz;
-	}
+	//Compute the position of the nearest probe to extract its sh coefficients
+	vec3 irr_norm_pos = computeNearestProbeIndex(u_irr_start, u_irr_end, u_irr_delta, world_position, u_irr_normal_distance, N);
 
-	vec3 irradiance = ComputeSHIrradiance( N, sh );
+	//floor instead of round
+	vec3 local_indices = floor(irr_norm_pos);
+	
+	// Compute the irradiance
+	vec3 irradiance = getIrradianceInterpolated(local_indices, irr_norm_pos, u_irr_dims, u_num_probes, u_probes_texture, N);
+	//vec3 irradiance = getIrradiance(local_indices, u_irr_dims, u_num_probes, u_probes_texture, N); //This is the uninterpolated version
 	
 	gl_FragColor.xyz = color * irradiance;
 }
