@@ -36,7 +36,8 @@ GTR::Renderer::Renderer()
 	this->render_mode = GTR::eRenderMode::MULTI;
 	this->pipeline_mode = GTR::ePipelineMode::DEFERRED;
 	this->rendering_shadowmap = false;
-	this->update_shadowmaps = false;
+	this->update_shadowmaps = true;
+	this->show_shadowmap = false;
 	this->show_gbuffers = false;
 	this->show_ao = false;
 	this->show_ao_deferred = false;
@@ -83,7 +84,7 @@ void Renderer::render2FBO(GTR::Scene* scene, Camera* camera) {
 	if (this->show_gbuffers && gbuffers_fbo.fbo_id != 0)
 		showGbuffers(width, height, camera); 
 
-	//showShadowmap(camera);
+	
 }
 
 
@@ -105,13 +106,13 @@ struct sortRC {
 
 void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 {
-	
-	collectRenderCalls(scene, camera);
+	//std::vector<RenderCall> rc_data_list;
+		
+	collectRenderCalls(scene, camera, this->rc_data_list);
 	//sort each rcs after rendering one pass of all the scene
 	//std::sort(this->rc_data_list.begin(), this->rc_data_list.end(), sortRC());
 
-
-
+	/*
 	int i = 0;
 	std::vector<RenderCall> rc_data_no_alpha;
 	std::vector<RenderCall> rc_data_alpha;
@@ -122,7 +123,12 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 	}
 	for (i; i < rc_data_list.size(); i++) {
 		rc_data_alpha.push_back(rc_data_list[i]);
-	}
+	}*/
+	
+	if (update_shadowmaps)
+		createShadowmap(scene, camera);
+
+	
 		
 
 	if (pipeline_mode == FORWARD) {
@@ -151,6 +157,25 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 
 	}
 
+
+
+    
+	/*
+   if (show_irradiance){
+        updateIrradianceCache(scene);
+        //renderProbesGrid(); // to render on the screen to visualize it
+        Mesh* quad = Mesh::getQuad();
+        Shader* shader = Shader::Get("irradiance_sh");
+        uploadIrradianceUniforms(shader, camera);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
+        quad->render(GL_TRIANGLES);
+        glDisable(GL_BLEND);
+        glEnableGL_DEPTH_TEST);
+    }
+*/
+
 	
 	/*
 	if (this->update_shadowmaps) {
@@ -168,24 +193,27 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		}
 	}
 
+	
+
 	if (rendering_shadowmap) {
 		return;
 	}
 	createShadowmap(scene, camera);
 	*/
-	
-	
+
+	if(show_shadowmap)
+		showShadowmap(camera);
 }
 
 
-
-
 //collect all RC
-void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera) {
+void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera, std::vector<RenderCall>& rc_vector) {
 
 	//clear data_lists
-	this->rc_data_list.resize(0); 
+	//this->rc_data_list.resize(0);
+    rc_vector.resize(0);
 	this->light_entities.resize(0);
+	this->decal_entities.resize(0);
 
 	//render entities
 	for (int i = 0; i < scene->entities.size(); ++i)
@@ -200,7 +228,7 @@ void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera) {
 			PrefabEntity* pent = (GTR::PrefabEntity*)ent; //down-cast 
 			if (pent->prefab)
 
-				getRCsfromPrefab(ent->model, pent->prefab, camera);
+				getRCsfromPrefab(ent->model, pent->prefab, camera, rc_vector);
 
 		}
 
@@ -217,8 +245,15 @@ void Renderer::collectRenderCalls(GTR::Scene* scene, Camera* camera) {
 
 			this->light_entities.push_back(lig);
 
+		}
+
+		else if (ent->entity_type == DECAL) 
+		{
+			DecalEntity* decal = (GTR::DecalEntity*)ent;
+			this->decal_entities.push_back(decal);
 
 		}
+
 	}
 
 	if (camera) {
@@ -252,8 +287,6 @@ void GTR::Renderer::renderForward(GTR::Scene* scene, std::vector <RenderCall>& r
 }
 
 void GTR::Renderer::createGbuffers(int width, int height, std::vector <RenderCall>& rendercalls, Camera* camera) {
-	
-
 	
 
 	//start rendeing inside the gbuffers
@@ -294,6 +327,7 @@ void GTR::Renderer::createGbuffers(int width, int height, std::vector <RenderCal
 		RenderCall& rc = rendercalls[i]; 
 		renderMeshWithMaterial(eRenderMode::GBUFFERS, rc.model, rc.mesh, rc.material, camera); //always in gbuffer mode
 	}
+	 
 	
 
 	//stop rendering to the gbuffers
@@ -309,17 +343,19 @@ void GTR::Renderer::showGbuffers(int width, int height, Camera* camera) {
 	//if (!this->show_gbuffers)
 	//	return;
 
+	FBO* fbo = &gbuffers_fbo;
+
 	//GB0 color
 	glViewport(0, 0, width * 0.5, height * 0.5); //set area of the screen and render fullscreen quad
-	gbuffers_fbo.color_textures[0]->toViewport();
+	fbo->color_textures[0]->toViewport();
 
 	//GB1 normal
 	glViewport(width * 0.5, 0, width * 0.5, height * 0.5);
-	gbuffers_fbo.color_textures[1]->toViewport();
+	fbo->color_textures[1]->toViewport();
 
 	//GB2 material. properties
 	glViewport(width * 0.5, height * 0.5, width * 0.5, height * 0.5);
-	gbuffers_fbo.color_textures[2]->toViewport();
+	fbo->color_textures[2]->toViewport();
 
 	//GB3 depth_buffer
 	glViewport(0, height * 0.5, width * 0.5, height * 0.5);
@@ -329,7 +365,7 @@ void GTR::Renderer::showGbuffers(int width, int height, Camera* camera) {
 	depth_sh->enable();
 	depth_sh->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
 	//depth_sh->disable();
-	gbuffers_fbo.depth_texture->toViewport(depth_sh);
+	fbo->depth_texture->toViewport(depth_sh);
 
 	//Volver a poner el tama�o de VPort. 0,0 en una textura esta abajo iz!
 	glViewport(0, 0, width, height);
@@ -338,6 +374,32 @@ void GTR::Renderer::showGbuffers(int width, int height, Camera* camera) {
 }
 
 
+void GTR::Renderer::createDecalsFBO(int width, int height, Camera* camera)
+{
+	//After remderimng the scene of gbuffers, we will do some decals, and we will clone it to decal_fbo
+	//we need have depth cloned, as FBOs do not allow to read from the shader the current binded buffers(gbuffer).
+
+
+	if (this->decals_fbo.fbo_id == 0) {
+		// we need to clone the fbo of gbuffer
+		this->decals_fbo.create(width, height, 3, GL_RGBA, GL_UNSIGNED_BYTE);
+	}
+
+	gbuffers_fbo.color_textures[GTR::eChannels::ALBEDO]->copyTo(decals_fbo.color_textures[0]);
+	this->gbuffers_fbo.color_textures[GTR::eChannels::NORMAL]->copyTo(decals_fbo.color_textures[1]);
+	this->gbuffers_fbo.color_textures[GTR::eChannels::EMISSIVE]->copyTo(decals_fbo.color_textures[2]);
+
+	decals_fbo.bind();
+	this->gbuffers_fbo.depth_texture->copyTo(NULL);
+	renderDecals(camera);
+	decals_fbo.unbind();
+
+	decals_fbo.color_textures[GTR::eChannels::ALBEDO]->copyTo(gbuffers_fbo.color_textures[0]);
+	this->decals_fbo.color_textures[GTR::eChannels::NORMAL]->copyTo(gbuffers_fbo.color_textures[1]);
+	this->decals_fbo.color_textures[GTR::eChannels::EMISSIVE]->copyTo(gbuffers_fbo.color_textures[2]);
+
+}
+
 
 void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& rendercalls, Camera* camera)
 {
@@ -345,16 +407,12 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 	int height = Application::instance->window_height;
 
 	createGbuffers(width, height, rendercalls, camera);
-	//-----End gbuffers pass
-
-	// si existe ya la textura pero el tama�o de la textura no es el mismo que el anterior, que te la tire el de anterior y te cree uno nueva -> por resize de las ventas...
-
+	
+	createDecalsFBO(width, height, camera);
+		
 	ssao.applyEffect(gbuffers_fbo.depth_texture, gbuffers_fbo.color_textures[GTR::eChannels::NORMAL], camera, ao_buffer);
 
 	//---------Ilumination_Pass--------------
-		
-	
-
 
 	//now if we enable depth_test during the illumination pass it will take into account the scene depth buffer
 	illumination_fbo.bind();
@@ -381,6 +439,7 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 	
 	shader->setUniform("u_ao_show", show_ao_deferred);
 	shader->setUniform("u_camera_position", camera->eye);
+
 
 	Matrix44 inv_vp = camera->viewprojection_matrix;
 	inv_vp.inverse();
@@ -492,9 +551,6 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 }
 
 
-
-
-
 void Renderer::applyfinalHDR() {
 
 	Mesh* quad = Mesh::getQuad();
@@ -507,18 +563,18 @@ void Renderer::applyfinalHDR() {
 
 
 //renders all the prefab
-void Renderer::getRCsfromPrefab(const Matrix44& model, GTR::Prefab* prefab, Camera* camera)
+void Renderer::getRCsfromPrefab(const Matrix44& model, GTR::Prefab* prefab, Camera* camera, std::vector<RenderCall>& rc_vector)
 {
 	assert(prefab && "PREFAB IS NULL");
 	//assign the model to the root node
 
-	getRCsfromNode(model, &prefab->root, camera);
+	getRCsfromNode(model, &prefab->root, camera, rc_vector);
 	
 }
 
 
 //renders a node of the prefab and its children
-void Renderer::getRCsfromNode(const Matrix44& prefab_model, GTR::Node* node, Camera* camera)
+void Renderer::getRCsfromNode(const Matrix44& prefab_model, GTR::Node* node, Camera* camera, std::vector<RenderCall> &rc_vector)
 {
 	if (!node->visible)
 		return;
@@ -546,7 +602,9 @@ void Renderer::getRCsfromNode(const Matrix44& prefab_model, GTR::Node* node, Cam
 
 				rc.dist2camera = camera->eye.distance(world_bounding.center);
 			}
-			this->rc_data_list.push_back(rc);
+			//this->rc_data_list.push_back(rc);
+			rc_vector.push_back(rc);
+			
 			
 			//node->mesh->renderBounding(node_model, true);
 		}
@@ -555,7 +613,7 @@ void Renderer::getRCsfromNode(const Matrix44& prefab_model, GTR::Node* node, Cam
 
 	//iterate recursively with children
 	for (int i = 0; i < node->children.size(); ++i)
-		getRCsfromNode(prefab_model, node->children[i], camera);
+		getRCsfromNode(prefab_model, node->children[i], camera, rc_vector);
 	
 }
 
@@ -607,9 +665,6 @@ void Renderer::renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Me
 	}
 	else if (mode == GBUFFERS) 
 		shader = Shader::Get("gbuffers");
-
-	
-
 
 	if (!shader)//no shader? then nothing to render
 		return;
@@ -803,14 +858,16 @@ void Renderer::createShadowmap( GTR::Scene* scene, Camera* camera) {
 	//int height = Application::instance->window_height;
 
 	this->rendering_shadowmap = true;
-
+	std::vector<RenderCall> rc_data_lights;
 	LightEntity* light;
+
 	for (int i = 0; i < this->light_entities.size(); i++)
 	{
 		if (!this->light_entities[i]->cast_shadows || this->light_entities[i]->light_type == POINT)
 			continue;
 		light = this->light_entities[i];
 		
+		collectRenderCalls(scene, light->light_camera, rc_data_lights);
 
 		//enable it to render inside the texture
 		light->shadow_fbo->bind();
@@ -822,27 +879,31 @@ void Renderer::createShadowmap( GTR::Scene* scene, Camera* camera) {
 		glClear(GL_DEPTH_BUFFER_BIT);
 
 		//whatever we render here will be stored inside a texture, we don't need to do anything fanzy
-	
-		//renderScene(scene, light->light_camera);
-        std::vector<RenderCall> rc_vector;
-        
-        collectRenderCalls(scene, light->light_camera);
-        
-        // HE COMEEENTADOOOO ESTA LINEA PARA QUE FUNCIONEEEEE
-        
-        //renderMesh(const Matrix44 model, Mesh* mesh, camera, eAlphaMode material_alpha_mode);
-	
+
+		for (int i = 0; i < rc_data_lights.size(); i++) {
+			renderMesh(rc_data_lights[i].model, rc_data_lights[i].mesh, light->light_camera, rc_data_lights[i].material->alpha_mode);
+		}
+		
 		//disable it to render back to the screen
 		light->shadow_fbo->unbind();
 
 		//allow to render back to the color buffer
 		glColorMask(true, true, true, true);
 	
+
 	}
-	glDisable(GL_DEPTH_TEST);
-	glViewport(0, 0, width * 0.2, width * 0.2);
-	light->shadow_fbo->depth_texture->toViewport();
-	rendering_shadowmap = false;
+	
+	/*
+	//Clear rendercall for framebuffer ¿¿??
+	
+	*/
+
+
+	//glDisable(GL_DEPTH_TEST);
+	//glViewport(0, 0, width * 0.2, width * 0.2);
+	//light->shadow_fbo->depth_texture->toViewport();
+
+	update_shadowmaps = false;
 
 }
 
@@ -858,9 +919,7 @@ void Renderer::renderMesh(const Matrix44 model, Mesh* mesh, Camera* camera, eAlp
     
     // If blending, then we won't draw anything
     if (material_alpha_mode == GTR::eAlphaMode::BLEND)
-    {
-        return;
-    }
+		return;
 
     //chose a shader
     shader = Shader::Get("flat");
@@ -888,31 +947,31 @@ void Renderer::showShadowmap(Camera* camera) {
 	int height = Application::instance->window_height;
 
 	LightEntity* light;
+	int cont_ini_pos = 0;
 	for (int i = 0; i < this->light_entities.size(); i++)
 	{
-		if (!this->light_entities[i]->cast_shadows || this->light_entities[i]->light_type == POINT)
+		if (!this->light_entities[i]->cast_shadows || this->light_entities[i]->light_type == POINT ) //|| this->light_entities[i]->light_type == SPOT
 			continue;
 		light = this->light_entities[i];
 
-
+		
 		//remember to disable ztest if rendering quads!
 		glDisable(GL_DEPTH_TEST);
 
-		glViewport(0, 0, width * 0.2, width * 0.2);
-
-		//why not necessary???
-		//glViewport(0, 0, width , height);
-
+		glViewport(cont_ini_pos, 0, width * 0.2, width * 0.2);
+		cont_ini_pos += width * 0.2;
 		//to use a special shader,  to visualize a Depth Texture
 		Shader* zshader = Shader::Get("depth");
 		zshader->enable();
-		zshader->setTexture("u_texture", light->shadow_fbo->depth_texture, 10); //-----------------
+		//zshader->setTexture("u_texture", light->shadow_fbo->depth_texture, 10); //-----------------
 		zshader->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
 		light->shadow_fbo->depth_texture->toViewport(zshader);
 		
 		
-		//glViewport(0, 0, width, height);
+		
 	}
+	glViewport(0, 0, width, height);
+
 }
 
 
@@ -1011,8 +1070,8 @@ void Renderer::extractProbe(GTR::Scene* scene, sProbe& p) {//es una ref pq inter
 	//set the fov to 90 and the aspect to 1
 	camera.setPerspective(90, 1, 0.1, 1000);
 
-
-	collectRenderCalls(scene, NULL);//extraer todos los objetos sin camara
+	
+	collectRenderCalls(scene, NULL, this->rc_data_list);//extraer todos los objetos sin camara
 
 	for (int i = 0; i < 6; ++i) //for every cubemap face
 	{
@@ -1026,7 +1085,7 @@ void Renderer::extractProbe(GTR::Scene* scene, sProbe& p) {//es una ref pq inter
 
 		//render the scene from this point of view
 		irr_fbo.bind();
-		renderForward(scene, rc_data_list, &camera, true); //como solo tenemos un canal, los buffers de deferred tienen resolucion de la pantalla...
+		renderForward(scene, this->rc_data_list, &camera, true); //como solo tenemos un canal, los buffers de deferred tienen resolucion de la pantalla...
 
 		irr_fbo.unbind();
 
@@ -1268,4 +1327,47 @@ Texture* GTR::CubemapFromHDRE(const char* filename)
 	return texture;
 	*/
 	return NULL;
+}
+
+void Renderer::renderDecals(Camera* camera) 
+{
+	//For each decal, we need to read the zbuffer, draw a cube and reproject the decal to the surface 
+
+	static Mesh* cube = NULL; //Static make the variable use the last value that it have
+	if (cube == NULL) { 
+
+		cube = new Mesh();
+		cube->createCube();
+	}
+
+	Shader* shader = Shader::Get("decal");
+	shader->enable();
+
+	shader->setTexture("u_color_texture", gbuffers_fbo.color_textures[0], GTR::eChannels::ALBEDO);
+	shader->setTexture("u_normal_texture", gbuffers_fbo.color_textures[1], GTR::eChannels::NORMAL);
+	shader->setTexture("u_extra_texture", gbuffers_fbo.color_textures[2], GTR::eChannels::EMISSIVE);
+	shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, GTR::eChannels::DEPTH);
+
+	shader->setUniform("u_inverse_viewprojection", camera->inverse_viewprojection_matrix);
+	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	Vector2 iRes = Vector2(1.0 / (float)gbuffers_fbo.depth_texture->width, 1.0 / (float)gbuffers_fbo.depth_texture->height);
+	shader->setUniform("u_iRes", iRes);
+
+	for (int i = 0; i < this->decal_entities.size(); i++)
+	{
+		DecalEntity* decal = this->decal_entities[i];
+
+		shader->setUniform("u_model", decal->model);
+		Matrix44 invModel = decal->model;
+		invModel.inverse();
+		shader->setUniform("u_iModel", invModel);
+		shader->setUniform("u_decal_texture_type", decal->texture_type);
+
+		shader->setTexture("u_decal_texture", decal->decal_texture, 4);
+		
+		cube->render(GL_TRIANGLES);
+	}
+
+	
+
 }

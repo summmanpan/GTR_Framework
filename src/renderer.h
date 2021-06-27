@@ -79,10 +79,13 @@ namespace GTR {
 		int max_num_lights;
 		std::vector<LightEntity* > light_entities;
 
+		//Decals
+		std::vector<DecalEntity* > decal_entities;
 		
 		//FBO & SSAO
 		FBO gbuffers_fbo;
 		FBO illumination_fbo;
+		FBO decals_fbo;
 		FBO irr_fbo; //irradiance
 		SSAOFX ssao;
 		
@@ -103,6 +106,7 @@ namespace GTR {
 		ePipelineMode pipeline_mode;
 
 		bool update_shadowmaps;
+		bool show_shadowmap;
 		bool rendering_shadowmap;
 		bool show_ao;
 		bool show_ao_deferred;
@@ -119,13 +123,13 @@ namespace GTR {
 		//renders several elements of the scene
 		void renderScene(GTR::Scene* scene, Camera* camera);
 
-		void collectRenderCalls(GTR::Scene* scene, Camera* camera);
+		void collectRenderCalls(GTR::Scene* scene, Camera* camera, std::vector<RenderCall>& rc_vector);
 
 		//to get a whole prefab (with all its nodes)
-		void getRCsfromPrefab(const Matrix44& model, GTR::Prefab* prefab, Camera* camera);
+		void getRCsfromPrefab(const Matrix44& model, GTR::Prefab* prefab, Camera* camera, std::vector<RenderCall>& rc_vector);
 
 		//to get node from the prefab and its children
-		void getRCsfromNode(const Matrix44& model, GTR::Node* node, Camera* camera);
+		void getRCsfromNode(const Matrix44& model, GTR::Node* node, Camera* camera, std::vector<RenderCall> &rc_vector);
 
 		void uploadTextures(Material* material, Shader* shader);
 
@@ -135,6 +139,8 @@ namespace GTR {
 		void renderForward(GTR::Scene* scene, std::vector<RenderCall>& rendercalls, Camera* camera, bool apply_clear);
 
 		void createGbuffers(int width, int height, std::vector<RenderCall>& rendercalls, Camera* camera);
+
+		void createDecalsFBO(int width, int height, Camera* c );
 
 		void showGbuffers(int width, int height, Camera* camera);
 
@@ -174,6 +180,8 @@ namespace GTR {
         void renderIrradiance(Scene* scene, Camera* camera);
 
 		void applyfinalHDR();
+
+		void renderDecals(Camera* camera);
 
 	};
 

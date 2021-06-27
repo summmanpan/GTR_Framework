@@ -25,7 +25,7 @@ GTR::BaseEntity* selected_entity = nullptr;
 FBO* fbo = nullptr;
 Texture* texture = nullptr;
 
-float cam_speed = 10;////
+float cam_speed = 20;
 
 Mesh mesh;
 
@@ -73,9 +73,14 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 
 
 	scene = new GTR::Scene();
-	if (!scene->load("data/scene_test1.json"))
-		exit(1);
 
+
+
+	//if (!scene->load("data/scene_sponza.json"))
+	//	exit(1);
+	if (!scene->load("data/scene.json"))
+
+		exit(1);
 	camera->lookAt(scene->main_camera.eye, scene->main_camera.center, Vector3(0, 1, 0));
 	camera->fov = scene->main_camera.fov;
 
@@ -195,8 +200,6 @@ void Application::update(double seconds_elapsed)
 	if (Input::isKeyPressed(SDL_SCANCODE_S) || Input::isKeyPressed(SDL_SCANCODE_DOWN)) camera->move(Vector3(0.0f, 0.0f,-1.0f) * speed);
 	if (Input::isKeyPressed(SDL_SCANCODE_A) || Input::isKeyPressed(SDL_SCANCODE_LEFT)) camera->move(Vector3(1.0f, 0.0f, 0.0f) * speed);
 	if (Input::isKeyPressed(SDL_SCANCODE_D) || Input::isKeyPressed(SDL_SCANCODE_RIGHT)) camera->move(Vector3(-1.0f, 0.0f, 0.0f) * speed);
-
-	
 
 
 	//mouse input to rotate the cam
@@ -320,7 +323,7 @@ void Application::renderDebugGUI(void)
 	ImGui::ColorEdit3("BG color", scene->background_color.v);
 	ImGui::ColorEdit3("Ambient Light", scene->ambient_light.v);
 	ImGui::Combo("Pipeline", (int*) &renderer->pipeline_mode, "FORWARD\0DEFERRED\0", 2);
-	ImGui::Checkbox("UPDATE_SHADOWMAPS", &renderer->update_shadowmaps);
+	ImGui::Checkbox("SHOW_SHADOWMAPS", &renderer->show_shadowmap);
 	ImGui::Checkbox("SHOW_GBUFFERS", &renderer->show_gbuffers);
 	ImGui::Checkbox("SHOW_AO", &renderer->show_ao);
 	ImGui::Checkbox("SHOW_AO_DEFERRED", &renderer->show_ao_deferred);
@@ -395,9 +398,7 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
 		case SDLK_v: renderer->show_ao = !renderer->show_ao; break;
 		case SDLK_c: renderer->show_ao_deferred = !renderer->show_ao_deferred; break;
 
-		case SDLK_x:
-            renderer->updateIrradiance = !renderer->update_shadowmaps;
-            break;
+		case SDLK_x: renderer->updateIrradiance = !renderer->updateIrradiance; break;
             
         case SDLK_z: renderer->show_irradiance = !renderer->show_irradiance; break;
         case SDLK_3: renderer->show_probes = !renderer->show_probes; break;

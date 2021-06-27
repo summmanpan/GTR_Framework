@@ -7,16 +7,58 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
+<<<<<<< HEAD
             uuid = "D7448913-1F08-496C-ADA0-7F6BA80FAD67"
+=======
+            uuid = "75CBDC3E-2B3E-4EC0-8E79-A50C01F345F0"
+>>>>>>> decals
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../src/renderer.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
+<<<<<<< HEAD
             startingLineNumber = "1194"
             endingLineNumber = "1194"
             landmarkName = "Renderer::uploadIrradianceUniforms(shader, camera)"
+=======
+            startingLineNumber = "133"
+            endingLineNumber = "133"
+            landmarkName = "Renderer::renderScene(scene, camera)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "6B5B05D8-3C73-4E06-92ED-05A37987B991"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../src/renderer.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "109"
+            endingLineNumber = "109"
+            landmarkName = "Renderer::renderScene(scene, camera)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "2A86CAB2-2FB6-4B06-823F-279E6BDBB7F9"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../src/scene.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "208"
+            endingLineNumber = "208"
+            landmarkName = "GTR::LightEntity::uploadToShader(sh)"
+>>>>>>> decals
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
