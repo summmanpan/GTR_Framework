@@ -24,6 +24,8 @@ decal basic.vs decal.fs
 
 volumetric_rendering quad.vs volumetric_rendering.fs
 
+compute_coc quad.vs compute_coc.fs
+
 // ----------------------GET PARAMETERS-----------------------------
 \get_parm_from_vs
 
@@ -1541,6 +1543,48 @@ void main()
 	gl_FragColor = vec4(irradiance, transparency);
 	
 }
+
+\compute_coc.fs
+varying vec2 v_uv;
+
+uniform float u_camera_aperture;
+uniform float u_image_distance;
+uniform vec2 u_focus_point;
+uniform sampler2D u_depth_texture;
+uniform vec2 u_camera_nearfar;
+
+void main()
+{
+	float n = u_camera_nearfar.x;
+	float f = u_camera_nearfar.y;
+
+	// Plane in focus
+	float plane_in_focus = texture2D(u_depth_texture, u_focus_point + 0.5).x;
+	plane_in_focus = plane_in_focus*(f - n) + n; // Interporlation to get the world distance from the camera
+	
+	// object distance
+	float object_distance = texture2D(u_depth_texture, v_uv).x;
+	object_distance = object_distance*(f - n) + n; // Interporlation to get the world distance from the camera
+
+	float focal_length = plane_in_focus * object_distance / (plane_in_focus + object_distance);
+
+	float CoC = u_camera_aperture * focal_length * (plane_in_focus - object_distance);
+	CoC /= (object_distance * (plane_in_focus - focal_length));
+	CoC = abs(CoC);
+
+	// to avoid large values of CoC we clamp it 
+	CoC = clamp(CoC, 0.0, 20.0);
+
+	gl_FragData[0].xyz = vec3(CoC);
+
+	// To see where is the center point
+	float radius_center = 10.0;
+	if(length(gl_FragCoord.xy - u_focus_point) <= radius_center){
+		gl_FragData[0].xyz = vec3(1.0, 0.0, 0.0);
+	}
+
+}
+
 
 // -------------------------------------------------------------------------------------------------------------------------
 

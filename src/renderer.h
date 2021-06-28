@@ -88,11 +88,13 @@ namespace GTR {
 		FBO illumination_fbo;
 		FBO decals_fbo;
 		FBO irr_fbo; //irradiance
+        FBO* fbo_fx;
 		SSAOFX ssao;
 		
 
 		//Textures
 		Texture* ao_buffer;
+        Texture* texture_fx;
 	
 		//Probe
 		std::vector<sProbe> probes;
@@ -183,6 +185,9 @@ namespace GTR {
         
         // Volumetric rendering
         void volumetricRendering(Scene* scene, Camera* camera);
+        
+        // Depth of field
+        void computeCoC(Scene* scene, Camera* camera, float aperture, float image_distance, float screen_width, float screen_height);
         
         // HDR
 
