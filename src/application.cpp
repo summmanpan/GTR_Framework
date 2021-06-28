@@ -400,6 +400,7 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
 		case SDLK_o: renderer->render_mode = GTR::eRenderMode::SINGLE; break;
 		case SDLK_p: renderer->render_mode = GTR::eRenderMode::MULTI; break;
 		case SDLK_i: renderer->update_shadowmaps = !renderer->update_shadowmaps; break;
+        case SDLK_5: renderer->show_shadows = !renderer->show_shadows; break;
 	
 		case SDLK_m: renderer->render_mode = GTR::eRenderMode::SHOW_NORMAL; break;
 		case SDLK_n: renderer->render_mode = GTR::eRenderMode::SHOW_OC; break;

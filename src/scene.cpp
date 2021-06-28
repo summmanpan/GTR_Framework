@@ -215,15 +215,11 @@ void GTR::LightEntity::uploadToShader(Shader* sh)
 	sh->setUniform("u_light_spotExponent", spot_exp);
 	sh->setUniform("u_light_area_size", area_size );
 
-	
-	if (!this->cast_shadows) {
-		return;
-	}
-	
+    
 	sh->setUniform("u_shadow_viewproj", this->light_camera->viewprojection_matrix);
 	sh->setUniform("u_shadow_map", this->shadow_fbo->depth_texture, GTR::eChannels::DEPTH_SHADOW);///
 	sh->setUniform("u_shadow_bias", this->shadow_bias);
-	//sh->setUniform("u_cast_shadows", this->cast_shadows);
+	sh->setUniform("u_cast_shadows", this->cast_shadows);
 
 }
 

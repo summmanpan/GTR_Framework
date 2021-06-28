@@ -14,10 +14,10 @@
             filePath = "../src/renderer.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1198"
-            endingLineNumber = "1198"
-            landmarkName = "sortRC"
-            landmarkType = "14">
+            startingLineNumber = "1202"
+            endingLineNumber = "1202"
+            landmarkName = "Renderer::computeProbesCoeff(scene)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -30,10 +30,10 @@
             filePath = "../src/renderer.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1264"
-            endingLineNumber = "1264"
-            landmarkName = "sortRC"
-            landmarkType = "14">
+            startingLineNumber = "1268"
+            endingLineNumber = "1268"
+            landmarkName = "Renderer::uploadIrradianceUniforms(shader, camera)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

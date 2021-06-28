@@ -108,7 +108,7 @@ namespace GTR {
 
 		bool update_shadowmaps;
 		bool show_shadowmap;
-		bool rendering_shadowmap;
+        bool show_shadows; // To show the shadows or not
 		bool show_ao;
 		bool show_ao_deferred;
 		bool show_gbuffers;

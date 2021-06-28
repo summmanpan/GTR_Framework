@@ -35,7 +35,7 @@ GTR::Renderer::Renderer()
 	//Flags
 	this->render_mode = GTR::eRenderMode::MULTI;
 	this->pipeline_mode = GTR::ePipelineMode::DEFERRED;
-	this->rendering_shadowmap = false;
+	this->show_shadows = true;
 	this->update_shadowmaps = true;
 	this->show_shadowmap = false;
 	this->show_gbuffers = false;
@@ -452,6 +452,8 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 	Vector2 iRes = Vector2(1.0 / (float)width, 1.0 / (float)height);
 	shader->setUniform("u_inverse_viewprojection", inv_vp);
 	shader->setUniform("u_iRes", iRes );
+    
+    shader->setUniform("u_show_shadows", show_shadows);
 
 	
 	//disable depth and blend
@@ -508,6 +510,8 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 	shader->setUniform("u_inverse_viewprojection", inv_vp);
 	shader->setUniform("u_iRes", iRes);
 	shader->setUniform("u_camera_position", camera->eye );
+    
+    shader->setUniform("u_show_shadows", show_shadows);
 	
 	Matrix44 m; Vector3 pos;
 	for (int i = 0; i < this->light_entities.size(); i++)
@@ -775,6 +779,7 @@ void Renderer::renderlights(eRenderMode mode, Shader* shader, Mesh* mesh, GTR::M
 	
 	if (!shader)
 		return;
+    shader->setUniform("u_show_shadows", show_shadows);
 	
 	if (mode == eRenderMode::MULTI) {
 
@@ -866,7 +871,6 @@ void Renderer::createShadowmap( GTR::Scene* scene, Camera* camera) {
 	int width = Application::instance->window_width;
 	//int height = Application::instance->window_height;
 
-	this->rendering_shadowmap = true;
 	std::vector<RenderCall> rc_data_lights;
 	LightEntity* light;
 
@@ -1335,6 +1339,7 @@ void Renderer::volumetricRendering(Scene* scene, Camera* camera){
         Shader* shader = Shader::Get("volumetric_rendering");
         shader->enable();
         light->uploadToShader(shader);
+        shader->setUniform("u_show_shadows", show_shadows);
         
         Matrix44 inv_vp = camera->viewprojection_matrix;
         inv_vp.inverse();
