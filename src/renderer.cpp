@@ -51,10 +51,7 @@ GTR::Renderer::Renderer()
 	this->gbuffers_fbo.create(width, height, 3, GL_RGBA, GL_UNSIGNED_BYTE, true); 
 	this->illumination_fbo.create(width, height, 1, GL_RGB, GL_FLOAT, true);
 	this->irr_fbo.create(64, 64, 1, GL_RGB, GL_FLOAT);//Creamos la textura 63x63pixeles, no necesitamos alpha, interesa que sea float para mantener reso. ilum.
-    this->texture_fx = new Texture(width, height, GL_RGB, GL_UNSIGNED_BYTE, false);
-    this->fbo_fx = new FBO();
-    //this->fbo_fx->setTexture(texture_fx);
-    this->fbo_fx->create(width, height);
+	
 	
 	//Textures
 	this->ao_buffer = new Texture(width * 0.5, height * 0.5, GL_RED, GL_UNSIGNED_BYTE);
@@ -160,13 +157,6 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		//gbuffers_fbo.color_textures[0]->toViewport(Shader::Get("showAlpha"));        
 
 	}
-    
-    float aperture = 20.0;
-    float image_distance = 1.0;
-    float screen_width = Application::instance->window_width;
-    float screen_height = Application::instance->window_height;
-    glDisable(GL_BLEND);
-    computeCoC(scene, camera, aperture, image_distance, screen_width, screen_height);
 
 
 
@@ -1371,41 +1361,6 @@ void Renderer::volumetricRendering(Scene* scene, Camera* camera){
         
     }
 }
-
-// Depth of field
-void Renderer::computeCoC(Scene* scene, Camera* camera, float aperture, float image_distance, float screen_width, float screen_height){
-    
-    fbo_fx->bind();
-    // if we want to clear all in once
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-    checkGLErrors();
-    glDisable(GL_BLEND);
-    glDisable(GL_DEPTH_TEST);
-    
-    Mesh* quad = Mesh::getQuad();
-    Shader* shader = Shader::Get("compute_coc");
-        
-    // We set that the center point is always in focus
-    // It implies that all the points with the same z_buffer (or near) will be in focus as well
-    // In other words, the z of this points defines the plane in focus
-    Vector2 center_point = Vector2(screen_width/2, screen_height/2);
-    
-    
-    shader->enable();
-    
-    shader->setUniform("u_camera_aperture", aperture);
-    shader->setUniform("u_image_distance", image_distance);
-    shader->setUniform("u_focus_point", center_point);
-    shader->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
-    //shader->setUniform("u_inverse_viewprojection", camera->inverse_viewprojection_matrix);
-    shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, eChannels::DEPTH);
-    
-    quad->render(GL_TRIANGLES);
-    fbo_fx->unbind();
-    fbo_fx->color_textures[0]->toViewport();
-}
-
 //--------------------------HDRE------------------------------------------------------------
 
 void GTR::Renderer::renderSkybox(Texture* skybox, Camera* camera)
