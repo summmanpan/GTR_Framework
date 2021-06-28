@@ -1,11 +1,12 @@
 #pragma once
 #include "prefab.h"
 #include "fbo.h"
-#include "application.h"
+//#include "application.h"
 #include "sphericalharmonics.h"
 
 //forward declarations
 class Camera;
+class HDRE;
 
 namespace GTR {
 
@@ -178,6 +179,10 @@ namespace GTR {
         void uploadIrradianceUniforms(Shader* shader, Camera* camera);
         
         void renderIrradiance(Scene* scene, Camera* camera);
+
+		//--
+
+		void renderSkybox(Texture* skybox, Camera* camera);
 
 		void applyfinalHDR();
 

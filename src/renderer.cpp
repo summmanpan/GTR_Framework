@@ -43,7 +43,7 @@ GTR::Renderer::Renderer()
 	this->show_ao_deferred = false;
     this->updateIrradiance = true; // It should be set to true if there is a movement of an object to update the irradiance
     this->show_irradiance = true;
-    this->show_probes = true;
+    this->show_probes = false;
 	
 	//FrameBufferObject
 	
@@ -276,6 +276,11 @@ void GTR::Renderer::renderForward(GTR::Scene* scene, std::vector <RenderCall>& r
 		checkGLErrors();
 
 	}
+
+	//------------------render skybox 
+	//if (scene->environment)
+	//	renderSkybox(scene->environment, camera);
+
 	//render RenderCalls through reference 
 	for (int i = 0; i < rendercalls.size(); i++)
 	{
@@ -537,7 +542,7 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
     // Setting back to less depth test function
     glDepthFunc(GL_LESS);
     //now we can activate writing to depth buffer
-    glDepthMask(true);
+    glDepthMask(GL_TRUE);
     // Disabling blending
     glDisable(GL_BLEND);
     
@@ -551,7 +556,7 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
 }
 
 
-void Renderer::applyfinalHDR() {
+void Renderer::applyfinalHDR() { //function to apply HDR gamma !! postprocesing
 
 	Mesh* quad = Mesh::getQuad();
 	Shader* shader = Shader::Get("applyHDRgamma");
@@ -1306,39 +1311,72 @@ void Renderer::renderIrradiance(Scene* scene, Camera* camera){
     renderProbesGrid();
 }
 
+//--------------------------HDRE------------------------------------------------------------
 
+void GTR::Renderer::renderSkybox(Texture* skybox, Camera* camera)
+{
 
+	//Mesh* mesh = Mesh::getQuad();
+	Mesh* mesh = Mesh::Get("data/meshes/sphere.obj", false, false);
+	
+	Shader* shader = Shader::Get("skybox");
+	shader->enable();
 
+	// pasamos model y wp
+	Matrix44 m;
+	m.scale(10, 10, 10);
+	m.translate(camera->eye.x, camera->eye.y, camera->eye.z);
+
+	shader->setUniform("u_model", m);
+	shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	shader->setUniform("u_camera_position", camera->eye);
+	shader->setTexture("u_texture", skybox , 0); /////////change the number-----
+	
+	glDisable(GL_BLEND);
+	glDisable(GL_CULL_FACE);
+	glDisable(GL_DEPTH_TEST);
+	//no nos ha midificado el zbuffer
+	mesh->render(GL_TRIANGLES);
+	
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_TEST);
+
+	
+}
 
 Texture* GTR::CubemapFromHDRE(const char* filename)
 {
-	HDRE* hdre = new HDRE();
-	if (!hdre->load(filename))
-	{
-		delete hdre;
+	HDRE* hdre = HDRE::Get(filename);
+	if (!hdre)
 		return NULL;
-	}
 
-	/*
 	Texture* texture = new Texture();
-	texture->createCubemap(hdre->width, hdre->height, (Uint8**)hdre->getFaces(0), hdre->header.numChannels == 3 ? GL_RGB : GL_RGBA, GL_FLOAT );
-	for(int i = 1; i < 6; ++i)
-		texture->uploadCubemap(texture->format, texture->type, false, (Uint8**)hdre->getFaces(i), GL_RGBA32F, i);
+	if (hdre->getFacesf(0))
+	{
+		texture->createCubemap(hdre->width, hdre->height, (Uint8**)hdre->getFacesf(0),
+			hdre->header.numChannels == 3 ? GL_RGB : GL_RGBA, GL_FLOAT);
+		for (int i = 1; i < hdre->levels; ++i)
+			texture->uploadCubemap(texture->format, texture->type, false,
+				(Uint8**)hdre->getFacesf(i), GL_RGBA32F, i);
+	}
+	else
+		if (hdre->getFacesh(0))
+		{
+			texture->createCubemap(hdre->width, hdre->height, (Uint8**)hdre->getFacesh(0),
+				hdre->header.numChannels == 3 ? GL_RGB : GL_RGBA, GL_HALF_FLOAT);
+			for (int i = 1; i < hdre->levels; ++i)
+				texture->uploadCubemap(texture->format, texture->type, false,
+					(Uint8**)hdre->getFacesh(i), GL_RGBA16F, i);
+		}
 	return texture;
-	*/
-	return NULL;
 }
 
 void Renderer::renderDecals(Camera* camera) 
 {
 	//For each decal, we need to read the zbuffer, draw a cube and reproject the decal to the surface 
 
-	static Mesh* cube = NULL; //Static make the variable use the last value that it have
-	if (cube == NULL) { 
-
-		cube = new Mesh();
-		cube->createCube();
-	}
+	Mesh* cube = Mesh::getCube(); 
+	
 
 	Shader* shader = Shader::Get("decal");
 	shader->enable();

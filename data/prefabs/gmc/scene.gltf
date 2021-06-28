@@ -318,7 +318,7 @@
   "materials": [
     {
       "alphaMode": "BLEND",
-      "doubleSided": true,
+      "doubleSided": false,
       "name": "RootNode",
       "pbrMetallicRoughness": {
         "baseColorFactor": [
@@ -378,7 +378,7 @@
     },
     {
       "alphaMode": "BLEND",
-      "doubleSided": true,
+      "doubleSided": false,
       "name": "Material_34",
       "normalTexture": {
         "index": 6,

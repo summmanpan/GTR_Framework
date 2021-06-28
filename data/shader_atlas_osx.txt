@@ -19,6 +19,7 @@ applyHDRgamma quad.vs applyHDRgamma.fs
 
 probe basic.vs probe.fs //basic ya q es una esfera que lo vamos a proyectar
 irradiance_sh quad.vs irradiance_sh.fs 
+skybox basic.vs skybox.fs
 decal basic.vs decal.fs
 
 // ----------------------GET PARAMETERS-----------------------------
@@ -209,6 +210,8 @@ float outsideShadowmap(vec2 shadow_uv, float real_depth){
     if(real_depth < 0.0 || real_depth > 1.0)
         return 1.0;
 
+	return 1.0;	
+
 }
 
 float get_shadow_factor( vec3 pos, mat4 u_shadow_viewproj, float u_shadow_bias, sampler2D shadowmap ){
@@ -232,7 +235,7 @@ float get_shadow_factor( vec3 pos, mat4 u_shadow_viewproj, float u_shadow_bias, 
 	float shadow_depth = texture2D( shadowmap, shadow_uv).x;
 
 	//compute final shadow factor by comparing
-	float shadow_factor = 1.0;// * outsideShadowmap(shadow_uv, real_depth);
+	float shadow_factor = outsideShadowmap(shadow_uv, real_depth);
 
 	//we can compare them, even if they are not linear
 	if( shadow_depth < real_depth )
@@ -548,8 +551,6 @@ void main()
 
 // -------------------------------------------------------------------------------------------------------------------------
 \flat.fs
-
-
 
 //uniform vec4 u_color;
 //out vec4 FragColor;
@@ -1155,7 +1156,8 @@ vec3 ComputeSHIrradiance(in vec3 normal, in SH9Color sh)
 }
 
 
-// _________________________________________________________________________________________________________________________________
+//  -------------------------------------------------------------------------------------------------------------------------
+
 \get_irradiance_functions
 
 vec3 computeNearestProbeIndex(vec3 u_irr_start, vec3 u_irr_end, vec3 u_irr_delta, vec3 world_position, float u_irr_normal_distance, vec3 N){
@@ -1178,7 +1180,6 @@ float findProbeRowOfTexture( vec3 local_indices, vec3 u_irr_dims,  float u_num_p
 
 	//find the UV.y coord of that row in the probes texture
 	float row_uv = (row + 1.0) / (u_num_probes + 1.0); 
-
 
 	return row_uv;
 }
@@ -1488,12 +1489,12 @@ void main()
 	vec4 proj_worldpos = u_inverse_viewprojection * screen_pos;
 	vec3 world_position = proj_worldpos.xyz / proj_worldpos.w ;
 
-	//Convert to decal space by inverse model od the decal 
+	//Convert to decal space by inverse model of the decal 
 	vec3 localpos = (u_iModel * vec4(world_position, 1.0) ).xyz;
 	
 	//use x and z to compute uvs where fetch the pixel , from -1,1 to 0,1
 	uv = (localpos.xz / 2.0) + vec2(0.5);
-	//check if its of out of the range[0,1] to avoid projecting points outside the bbox[0,1] of the decal
+	//check if its of out of the range[0,1] to avoid projecting points outside the cube[0,1] of the decal
 	if(uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0)
 		discard;
 
@@ -1516,3 +1517,22 @@ void main()
 	gl_FragData[2] = extra ;
 	
 }
+
+// -------------------------------------------------------------------------------------------------------------------------
+\skybox.fs
+
+varying vec3 v_world_position; 
+varying vec4 v_color;
+
+
+uniform samplerCube u_texture;
+uniform vec3 u_camera_position;
+//out vec4 FragColor;
+
+void main()
+{
+	vec3 V = v_world_position - u_camera_position;
+	//vec4 color = texture2D( u_texture, V );
+	gl_FragColor = vec4(1.0 ,0.0 ,0.0 , 1.0); //color;
+} 
+

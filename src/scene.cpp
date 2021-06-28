@@ -11,6 +11,7 @@ GTR::Scene::Scene()
 {
 	instance = this;
 	this->max_dist_ao = 0;
+	this->environment = NULL;
 }
 
 void GTR::Scene::clear()
@@ -353,8 +354,6 @@ GTR::DecalEntity::DecalEntity()
 
 void GTR::DecalEntity::configure(cJSON* json) {
 
-	
-
 	if (cJSON_GetObjectItem(json, "filename")) {
 		std::string filename = readJSONString(json, "filename", "");
 		this->decal_texture = Texture::Get((std::string("data/") + filename).c_str());
@@ -372,4 +371,16 @@ void GTR::DecalEntity::configure(cJSON* json) {
 
 	}
 
+}
+
+GTR::ReflectionProbeEntity::ReflectionProbeEntity()
+{
+	entity_type = REFLECTION_PROBE;
+	pos.set(0, 0, 0);
+	cubemap = NULL;
+}
+
+void GTR::ReflectionProbeEntity::configure(cJSON* json)
+{
+	
 }

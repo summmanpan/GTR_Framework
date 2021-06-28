@@ -10,6 +10,7 @@
 #include "prefab.h"
 #include "gltf_loader.h"
 #include "renderer.h"
+#include "extra/hdre.h"
 
 #include <cmath>
 #include <string>
@@ -28,6 +29,7 @@ Texture* texture = nullptr;
 float cam_speed = 20;
 
 Mesh mesh;
+
 
 Application::Application(int window_width, int window_height, SDL_Window* window)
 {
@@ -79,8 +81,8 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 	//if (!scene->load("data/scene_sponza.json"))
 	//	exit(1);
 	if (!scene->load("data/scene.json"))
-
 		exit(1);
+	
 	camera->lookAt(scene->main_camera.eye, scene->main_camera.center, Vector3(0, 1, 0));
 	camera->fov = scene->main_camera.fov;
 
@@ -106,7 +108,19 @@ Application::Application(int window_width, int window_height, SDL_Window* window
     // Probe texture
     renderer->createProbesTexture();
 
+	//------------HDRE-----------------------------------------
+	HDRE* hdre =  new HDRE();
+	//if( hdre->load("data/night.hdre"))
+		//scene->environment = ; 
+		//renderer->CubemapFromHDRE()
 	//hide the cursor
+
+	//manager to load hdres
+	//hdre->Get("data/night.hdre"); // look!!!!!!!!!!!
+
+	if(hdre->load("data/night.hdre"))
+		scene->environment = GTR::CubemapFromHDRE("data/night.hdre");
+		
 	SDL_ShowCursor(!mouse_locked); //hide or show the mouse
 }
 
@@ -327,8 +341,8 @@ void Application::renderDebugGUI(void)
 	ImGui::Checkbox("SHOW_GBUFFERS", &renderer->show_gbuffers);
 	ImGui::Checkbox("SHOW_AO", &renderer->show_ao);
 	ImGui::Checkbox("SHOW_AO_DEFERRED", &renderer->show_ao_deferred);
-	
-
+	ImGui::Checkbox("SHOW_IRRADIANCE", &renderer->show_irradiance);
+	ImGui::Checkbox("SHOW PROBES", &renderer->show_probes);
 	//add info to the debug panel about the camera
 	if (ImGui::TreeNode(camera, "Camera")) {
 		camera->renderInMenu();
