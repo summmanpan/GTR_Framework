@@ -40,9 +40,10 @@ GTR::Renderer::Renderer()
 	this->show_gbuffers = false;
 	this->show_ao = false;
 	this->show_ao_deferred = false;
-    this->updateIrradiance = true; // It should be set to true if there is a movement of an object to update the irradiance
-    this->show_irradiance = true;
-    this->show_probes = true;
+    this->updateIrradiance = false; // It should be set to true if there is a movement of an object to update the irradiance
+    this->show_irradiance = false;
+    this->show_probes = false;
+    this->show_volumetric_rendering = true;
 	
 	//FrameBufferObject
 	
@@ -484,6 +485,9 @@ void GTR::Renderer::renderDeferred(GTR::Scene* scene, std::vector <RenderCall>& 
     
     // Render Irradiance
     renderIrradiance(scene, camera);
+    
+    // Volumetric rendering
+    volumetricRendering(scene, camera);
 
 	//stop rendering to the fbo
 	illumination_fbo.unbind();
@@ -1247,7 +1251,47 @@ void Renderer::renderIrradiance(Scene* scene, Camera* camera){
     renderProbesGrid();
 }
 
-
+void Renderer::volumetricRendering(Scene* scene, Camera* camera){
+    if(!show_volumetric_rendering)
+        return;
+    
+    float air_density = 0.001;
+    
+    int width = Application::instance->window_width;
+    int height = Application::instance->window_height;
+    Vector2 iRes = Vector2(1.0 / (float)width, 1.0 / (float)height);
+    
+    for (int i = 0; i < light_entities.size(); i++){
+        LightEntity* light = light_entities[i];
+        if(light->light_type != DIRECTIONAL)
+            continue;
+        
+        
+        Mesh* quad = Mesh::getQuad();
+        Shader* shader = Shader::Get("volumetric_rendering");
+        shader->enable();
+        light->uploadToShader(shader);
+        
+        Matrix44 inv_vp = camera->viewprojection_matrix;
+        inv_vp.inverse();
+        
+        shader->setUniform("u_inverse_viewprojection", inv_vp);
+        shader->setUniform("u_iRes", iRes);
+        shader->setUniform("u_camera_position", camera->eye);
+        shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, eChannels::DEPTH);
+        
+        shader->setUniform("u_air_density", air_density);
+        
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_BLEND);
+        //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        quad->render(GL_TRIANGLES);
+        glDisable(GL_BLEND);
+        
+        
+    }
+}
 
 
 

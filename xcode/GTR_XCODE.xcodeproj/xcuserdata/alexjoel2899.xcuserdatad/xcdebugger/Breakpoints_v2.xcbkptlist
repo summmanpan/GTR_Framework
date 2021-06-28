@@ -14,9 +14,25 @@
             filePath = "../src/renderer.cpp"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1194"
-            endingLineNumber = "1194"
+            startingLineNumber = "1198"
+            endingLineNumber = "1198"
             landmarkName = "Renderer::uploadIrradianceUniforms(shader, camera)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "A7728F69-DB32-4A59-AC95-D5BBBAE10ED1"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../src/renderer.cpp"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "1264"
+            endingLineNumber = "1264"
+            landmarkName = "Renderer::volumetricRendering(scene, camera)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

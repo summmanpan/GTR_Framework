@@ -110,6 +110,7 @@ namespace GTR {
         bool updateIrradiance;
         bool show_irradiance;
         bool show_probes;
+        bool show_volumetric_rendering;
 
 		//ctor
 		Renderer();
@@ -172,6 +173,11 @@ namespace GTR {
         void uploadIrradianceUniforms(Shader* shader, Camera* camera);
         
         void renderIrradiance(Scene* scene, Camera* camera);
+        
+        // Volumetric rendering
+        void volumetricRendering(Scene* scene, Camera* camera);
+        
+        // HDR
 
 		void applyfinalHDR();
 

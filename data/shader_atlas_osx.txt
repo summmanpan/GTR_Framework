@@ -20,6 +20,8 @@ applyHDRgamma quad.vs applyHDRgamma.fs
 probe basic.vs probe.fs //basic ya q es una esfera que lo vamos a proyectar
 irradiance_sh quad.vs irradiance_sh.fs 
 
+volumetric_rendering quad.vs volumetric_rendering.fs
+
 // ----------------------GET PARAMETERS-----------------------------
 \get_parm_from_vs
 
@@ -1264,20 +1266,6 @@ void main()
 	sh.c[6] = u_coeffs[6];
 	sh.c[7] = u_coeffs[7];
 	sh.c[8] = u_coeffs[8];
-	
-
-	/*
-	SH9Color sh;
-	#include "find_probe_row_of_texture"
-	
-	//fill the coefficients
-	const float d_uvx = 1.0 / 9.0;
-	for(int i = 0; i < 9; ++i)
-	{
-		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
-		sh.c[i] = texture2D( u_probes_texture, coeffs_uv ).xyz;
-	}
-	*/
 
 	vec3 irradiance = ComputeSHIrradiance( N, sh );
 	
@@ -1427,3 +1415,78 @@ void main()
 	gl_Position = u_viewprojection * vec4( v_world_position, 1.0 );
 }
 
+\volumetric_rendering.fs
+
+varying vec2 v_uv;
+
+uniform vec3 u_camera_position;
+uniform mat4 u_inverse_viewprojection;
+uniform vec2 u_iRes;
+uniform float u_air_density;
+
+#include "get_lights_uniforms"
+#include "get_lights_functions"
+#include "get_textures_uniforms"
+#include "get_gamma_functions"
+
+
+#define SAMPLES 64
+
+void main()
+{
+	// we can extract uvs from pixel screenpos
+	vec2 uv = gl_FragCoord.xy * u_iRes.xy ;
+
+	//-----read depth textures from gbuffers---
+	vec4 depth = texture2D(u_depth_texture, uv);
+	
+	//reconstruct world position from depth and inv. viweproj
+	float depth_fact = depth.x ;
+	vec4 screen_pos = vec4( uv.x *2.0 -1.0, uv.y * 2.0 -1.0, depth_fact*2.0-1.0, 1.0 ); // conv todo de -1 a 1
+	vec4 proj_worldpos = u_inverse_viewprojection * screen_pos;
+	vec3 world_position = proj_worldpos.xyz / proj_worldpos.w ;
+
+	// Compute the ray vector
+	vec3 ray_dir = world_position - u_camera_position;
+	float dist = length( ray_dir );
+	ray_dir /= dist; // normalizing the vector
+
+	dist = clamp(dist, 0.0, 550.0);
+
+	// Initializing ray marching state
+	float step_dist = dist / float(SAMPLES);
+	vec3 current_pos = u_camera_position;
+	vec3 ray_offset = ray_dir * step_dist;
+
+	//how visible is the point at the end of the ray
+	float transparency = 1.0;
+
+	vec3 irradiance = vec3(0.0);
+
+
+	// Ray-marching for loop
+	for(int i = 0; i < SAMPLES; ++i)
+	{
+		//reduce visibility
+		float pixel_transparency = u_air_density * step_dist;
+		transparency -= pixel_transparency;
+
+		//compute illumination in this point
+		//...
+
+		float att_factor = compute_attfactor(u_light_position, current_pos, u_light_maxdist);
+		
+		//accumulate accordingly
+		irradiance += u_light_color * pixel_transparency * u_light_intensity; //* shadow;
+
+		//advance to next position
+		current_pos.xyz += ray_offset;
+
+		if(transparency < 0.001){
+			break;
+		}
+	}
+
+	gl_FragColor = vec4(irradiance, transparency);
+	
+}

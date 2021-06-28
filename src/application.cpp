@@ -401,6 +401,7 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
             
         case SDLK_z: renderer->show_irradiance = !renderer->show_irradiance; break;
         case SDLK_3: renderer->show_probes = !renderer->show_probes; break;
+        case SDLK_4: renderer->show_volumetric_rendering = !renderer->show_volumetric_rendering; break;
 
 	}
 
