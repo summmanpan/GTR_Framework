@@ -16,8 +16,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1198"
             endingLineNumber = "1198"
-            landmarkName = "Renderer::uploadIrradianceUniforms(shader, camera)"
-            landmarkType = "7">
+            landmarkName = "sortRC"
+            landmarkType = "14">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -32,8 +32,8 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1264"
             endingLineNumber = "1264"
-            landmarkName = "Renderer::volumetricRendering(scene, camera)"
-            landmarkType = "7">
+            landmarkName = "sortRC"
+            landmarkType = "14">
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

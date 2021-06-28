@@ -1542,7 +1542,16 @@ void Mesh::renderBounding( const Matrix44& model, bool world_bounding )
 	sh->disable();
 }
 
-
+Mesh* Mesh::getCube()
+{
+	static Mesh* cube = NULL; //Static make the variable use the last value that it have
+	if (!cube)  {
+		cube = new Mesh();
+		cube->createCube();
+		cube->uploadToVRAM();
+	}
+	return cube;
+}
 
 Mesh* Mesh::getQuad()
 {

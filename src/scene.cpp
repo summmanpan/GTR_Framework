@@ -11,6 +11,7 @@ GTR::Scene::Scene()
 {
 	instance = this;
 	this->max_dist_ao = 0;
+	this->environment = NULL;
 }
 
 void GTR::Scene::clear()
@@ -129,8 +130,10 @@ GTR::BaseEntity* GTR::Scene::createEntity(std::string type)
 {
 	if (type == "PREFAB")
 		return new GTR::PrefabEntity();
-	if (type == "LIGHT")
+	else if (type == "LIGHT")
 		return new GTR::LightEntity();
+	else if (type == "DECAL")
+		return new GTR::DecalEntity();
 	return NULL;
 }
 
@@ -143,9 +146,6 @@ void GTR::BaseEntity::renderInMenu()
 	ImGuiMatrix44(model, "Model");
 #endif
 }
-
-
-
 
 GTR::PrefabEntity::PrefabEntity()
 {
@@ -193,7 +193,7 @@ GTR::LightEntity::LightEntity() {
 	this->spot_exp = 0;
 	this->area_size = 0;
 	this->shadow_fbo = NULL;
-	this->shadow_bias = 0;
+	this->shadow_bias = 0.027;
 	this->cast_shadows = false;
 	
 	this->light_camera = new Camera();
@@ -221,28 +221,25 @@ void GTR::LightEntity::uploadToShader(Shader* sh)
 	}
 	
 	sh->setUniform("u_shadow_viewproj", this->light_camera->viewprojection_matrix);
-	//sh->setUniform("u_shadow_map", this->shadow_fbo->color_textures[0], 10);///
+	sh->setUniform("u_shadow_map", this->shadow_fbo->depth_texture, GTR::eChannels::DEPTH_SHADOW);///
 	sh->setUniform("u_shadow_bias", this->shadow_bias);
-	
-	
+	//sh->setUniform("u_cast_shadows", this->cast_shadows);
+
 }
-
-
-
 
 void GTR::LightEntity::configure(cJSON* json)
 {
 	
 	if (cJSON_GetObjectItem(json, "light_type"))
 	{
-		std::string lightType = cJSON_GetObjectItem(json, "light_type")->valuestring;
+		std::string lightType = readJSONString(json, "light_type", "");
 		if (lightType == "POINT") {
 			this->light_type = POINT; 
 		}
-		if (lightType == "DIRECTIONAL") {
+		else if (lightType == "DIRECTIONAL") {
 			this->light_type = DIRECTIONAL;
 		}
-		if (lightType == "SPOT") {
+		else if (lightType == "SPOT") {
 			this->light_type = SPOT;
 		}
 		
@@ -280,7 +277,7 @@ void GTR::LightEntity::configure(cJSON* json)
 	 }
 	 if (cJSON_GetObjectItem(json, "shadow_bias"))
 	{
-		float shadow_bias = cJSON_GetObjectItem(json, "shadow_bias")->valuedouble;
+		float shadow_bias = readJSONNumber(json, "shadow_bias", this->shadow_bias);
 		this->shadow_bias = shadow_bias;
 	}
 	
@@ -313,6 +310,7 @@ void GTR::LightEntity::configureLightCamera()
 		
 	}
 	else if (this->light_type == DIRECTIONAL){// DIRECTIONAL
+        near_plane = -far_plane;
 		this->light_camera->setOrthographic(-area_size / 2, area_size / 2, -area_size / 2, area_size / 2, near_plane, far_plane);
 	}
 }
@@ -329,20 +327,60 @@ void GTR::LightEntity::renderInMenu()
 		if (this->light_type == DIRECTIONAL) {
 			ImGui::SliderFloat("Intensity", &intensity, 0, 20);
 			ImGui::SliderFloat("Area size", &area_size, 0, 250);
+			ImGui::SliderFloat("Bias factor", &shadow_bias, 0, 1);
 		}
-
-		if (this->light_type == POINT) {
+		else if (this->light_type == POINT) {
 			ImGui::SliderFloat("Max dist", &max_dist, 0, 1000);
 			ImGui::SliderFloat("Intensity", &intensity, 0, 20);
 		}
-
-		if (this->light_type == SPOT) {
+		else if (this->light_type == SPOT) {
 			ImGui::SliderFloat("Max dist", &max_dist, 0, 1000);
 			ImGui::SliderFloat("Intensity", &intensity, 0, 20);
 			ImGui::SliderFloat("Spot exp", &spot_exp, 0, 30);
 			ImGui::SliderFloat("Spot cutoff", &cone_angle, 0, 90);
-
+			ImGui::SliderFloat("Bias factor", &shadow_bias, 0, 1);
 		}
 		
+
 	#endif
+}
+
+GTR::DecalEntity::DecalEntity()
+{
+	this->entity_type = DECAL;
+	this->decal_texture = NULL;
+	this->texture_type = eDecalTextureType::albedo;
+}
+
+void GTR::DecalEntity::configure(cJSON* json) {
+
+	if (cJSON_GetObjectItem(json, "filename")) {
+		std::string filename = readJSONString(json, "filename", "");
+		this->decal_texture = Texture::Get((std::string("data/") + filename).c_str());
+	}
+	if (cJSON_GetObjectItem(json, "texture_type"))
+	{
+		std::string textureType = readJSONString(json, "texture_type", "");
+		if (textureType == "albedo") {
+			this->texture_type = eDecalTextureType::albedo;
+		}
+		else if (textureType == "normal") {
+			this->texture_type = eDecalTextureType::normal;
+		}
+		
+
+	}
+
+}
+
+GTR::ReflectionProbeEntity::ReflectionProbeEntity()
+{
+	entity_type = REFLECTION_PROBE;
+	pos.set(0, 0, 0);
+	cubemap = NULL;
+}
+
+void GTR::ReflectionProbeEntity::configure(cJSON* json)
+{
+	
 }

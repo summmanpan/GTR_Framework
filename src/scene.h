@@ -9,7 +9,12 @@
 
 
 //forward declaration
+//in case wu just use a pointer, then we dont need include all the file
 class cJSON; 
+//class SHader;
+//class FBO;
+class Texture;
+
 
 
 //our namespace
@@ -21,7 +26,7 @@ namespace GTR {
 		LIGHT = 2,
 		CAMERA = 3,
 		REFLECTION_PROBE = 4,
-		DECALL = 5
+		DECAL = 5
 	};
 
 	class Scene;
@@ -96,6 +101,34 @@ namespace GTR {
 
 	};
 
+	class ReflectionProbeEntity : public GTR::BaseEntity
+	{
+	public:
+		
+		Vector3 pos;
+		Texture* cubemap;
+		ReflectionProbeEntity();
+		
+		//virtual void renderInMenu();
+		virtual void configure(cJSON* json);
+	};
+
+	
+
+	enum eDecalTextureType {
+		albedo = 0,
+		normal = 1
+	};
+	
+	class DecalEntity : public GTR::BaseEntity
+	{
+	public:
+		Texture* decal_texture;
+		DecalEntity();
+		eDecalTextureType texture_type;
+		//virtual void renderInMenu();
+		virtual void configure(cJSON* json);
+	};
 
 	//contains all entities of the scene
 	class Scene
@@ -107,6 +140,7 @@ namespace GTR {
 		Vector3 ambient_light;
 		float max_dist_ao;
 		Camera main_camera;
+		Texture* environment;
 
 		Scene();
 

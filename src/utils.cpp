@@ -605,3 +605,4 @@ Vector3& gamma(Vector3& color) {
 	return *result;
 
 }
+
