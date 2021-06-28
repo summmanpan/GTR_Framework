@@ -42,8 +42,8 @@ GTR::Renderer::Renderer()
 	this->show_ao = false;
 	this->show_ao_deferred = false;
     this->show_volumetric_rendering = true;
-    this->updateIrradiance = true; // It should be set to true if there is a movement of an object to update the irradiance
-    this->show_irradiance = true;
+    this->updateIrradiance = false; // It should be set to true if there is a movement of an object to update the irradiance
+    this->show_irradiance = false;
     this->show_probes = false;
 	
 	//FrameBufferObject

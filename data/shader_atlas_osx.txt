@@ -1472,6 +1472,8 @@ uniform float u_air_density;
 #include "get_lights_functions"
 #include "get_textures_uniforms"
 #include "get_gamma_functions"
+#include "get_shadow_uniforms"
+#include "get_shadow_functions"
 
 
 #define SAMPLES 64
@@ -1519,9 +1521,10 @@ void main()
 		//...
 
 		float att_factor = compute_attfactor(u_light_position, current_pos, u_light_maxdist);
+		float shadow_factor = get_shadow_factor( current_pos, u_shadow_viewproj, u_shadow_bias, u_shadow_map);
 		
 		//accumulate accordingly
-		irradiance += u_light_color * pixel_transparency * u_light_intensity; //* shadow;
+		irradiance += u_light_color * pixel_transparency * u_light_intensity * shadow_factor;
 
 		//advance to next position
 		current_pos.xyz += ray_offset;

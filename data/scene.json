@@ -117,7 +117,7 @@
 			"position": [ 150, 300, 50 ],
 			"target": [ -80, 0, -50 ],
 			"color": [ 0.1, 0.2, 0.4 ],
-			"intensity": 1.5,
+			"intensity": 4.5,
 			"area_size": 1500,
 			"max_dist": 1000,
 			"cast_shadows": true,
