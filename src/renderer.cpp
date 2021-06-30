@@ -46,6 +46,7 @@ GTR::Renderer::Renderer()
     this->show_irradiance = false;
     this->show_probes = false;
 	show_reflectionProbe = false;
+    this->show_dof = true;
 	
 	show_reflectionProbeMesh = false;
 	//FrameBufferObject
@@ -58,8 +59,21 @@ GTR::Renderer::Renderer()
 	//this->irr_fbo = nullptr;
 	this->reflection_fbo = new FBO(); // no hace falta asignar ninguna textura, porque vamos a asignar cada diferente rprobe, y que sobreescriba
 	
+	// irradiance fbo
+	this->irr_fbo.create(64, 64, 1, GL_RGB, GL_FLOAT);//Creamos la textura 63x63pixeles, no necesitamos alpha, interesa que sea float para mantener reso. ilum.
+    
+	// Effects fbo. Now it's being used for depth of field
+	this->texture_fx = new Texture(width, height, GL_RGB, GL_UNSIGNED_BYTE, false);
+    this->fbo_fx.setTexture(texture_fx);
+	
 	//Textures
 	this->ao_buffer = new Texture(width * 0.5, height * 0.5, GL_RED, GL_UNSIGNED_BYTE);
+    
+    // Depth of FIeld
+    this->aperture = 20.0;
+    this->image_distance = 1.0;
+    this->max_CoC = 20.0;
+    this->plane_in_focus_distance = 300.0;
 	
 
 
@@ -170,7 +184,10 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 
 		//applyfinalHDR();
 		
-		//gbuffers_fbo.color_textures[0]->toViewport(Shader::Get("showAlpha"));        
+		//gbuffers_fbo.color_textures[0]->toViewport(Shader::Get("showAlpha"));
+        
+        // Apply DOF
+        depthOfFieldFX(camera, this->aperture, this->image_distance, this->max_CoC, this->plane_in_focus_distance);
 
 	}
 
@@ -1433,6 +1450,73 @@ void Renderer::volumetricRendering(Scene* scene, Camera* camera){
         
     }
 }
+
+// Depth of field
+void Renderer::computeCoC(Camera* camera, float aperture, float image_distance, float screen_width, float screen_height, float max_CoC, float plane_in_focus_distance){
+    fbo_fx.bind();
+    // if we want to clear all in once
+    glClearColor(0, 0, 0, 0);
+    checkGLErrors();
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    
+    Mesh* quad = Mesh::getQuad();
+    Shader* shader = Shader::Get("compute_coc");
+        
+    // We set that the center point is always in focus
+    // It implies that all the points with the same z_buffer (or near) will be in focus as well
+    // In other words, the z of this points defines the plane in focus
+    Vector2 center_point = Vector2(screen_width/2, screen_height/2);
+    
+    
+    shader->enable();
+    
+    shader->setUniform("u_camera_aperture", aperture);
+    shader->setUniform("u_image_distance", image_distance);
+    shader->setUniform("u_focus_point", center_point);
+    shader->setUniform("u_max_coc", max_CoC);
+    shader->setUniform("u_plane_in_focus", plane_in_focus_distance);
+    shader->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
+    shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, eChannels::DEPTH);
+    
+    quad->render(GL_TRIANGLES);
+    fbo_fx.unbind();
+    //fbo_fx.color_textures[0]->toViewport(); To visualize the values of the Circle of Confusion
+}
+
+void Renderer::applyDOF(Camera* camera, float max_CoC){
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    
+    Mesh* quad = Mesh::getQuad();
+    Shader* shader = Shader::Get("dof");
+    
+    shader->enable();
+    
+    shader->setUniform("u_max_coc", max_CoC);
+    shader->setTexture("u_illumination_texture", illumination_fbo.color_textures[0], eChannels::ILLUMINATION);
+    shader->setTexture("u_coc_texture", fbo_fx.color_textures[0], eChannels::FX);
+    Vector2 iRes = Vector2(1.0 / (float)illumination_fbo.depth_texture->width, 1.0 / (float)illumination_fbo.depth_texture->height);
+    shader->setUniform("u_iRes", iRes);
+    
+   quad->render(GL_TRIANGLES);
+    
+}
+
+void Renderer::depthOfFieldFX(Camera* camera, float camera_aperture, float image_distance, float max_CoC, float plane_in_focus_distance ){
+    if(!show_dof){
+        return;
+    }
+    float screen_width = Application::instance->window_height;
+    float screen_height = Application::instance->window_height;
+    
+    glDisable(GL_BLEND);
+    computeCoC( camera, camera_aperture, image_distance, screen_width, screen_height, max_CoC, plane_in_focus_distance);
+    applyDOF(camera, max_CoC);
+}
+
+
+
 //--------------------------HDRE------------------------------------------------------------
 
 

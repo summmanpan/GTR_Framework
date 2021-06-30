@@ -93,16 +93,13 @@ namespace GTR {
 		FBO irr_fbo; //irradiance
 		FBO* reflection_fbo;
 
+        FBO fbo_fx; // Used for DOF now
 		SSAOFX ssao;
 		
 
 		//Textures
 		Texture* ao_buffer;
-
-		//Texture* albedo_texture_aux;
-		//Texture* depth_texture_aux;
-		//Texture* normal_texture_aux;
-
+        Texture* texture_fx; // Used for DOF now
 	
 		//Probe
 		std::vector<sProbe> probes;
@@ -111,6 +108,13 @@ namespace GTR {
 		Vector3 probe_end_pos;
 		Vector3 probe_delta;
         Texture* probes_texture;
+        
+        // Depth of field parameters
+        float aperture;
+        float image_distance;
+        float max_CoC;
+        float plane_in_focus_distance;
+        
 
 		//Flags
 		eRenderMode render_mode;
@@ -128,6 +132,7 @@ namespace GTR {
         bool show_volumetric_rendering;
 		bool show_reflectionProbe;
 		bool show_reflectionProbeMesh;
+        bool show_dof;
 
 		//ctor
 		Renderer();
@@ -196,6 +201,13 @@ namespace GTR {
         
         // Volumetric rendering
         void volumetricRendering(Scene* scene, Camera* camera);
+        
+        // Depth of field
+        void computeCoC(Camera* camera, float aperture, float image_distance, float screen_width, float screen_height, float max_CoC, float plane_in_focus_distance);
+        
+        void applyDOF(Camera* camera, float max_CoC);
+        
+        void depthOfFieldFX(Camera* camera, float aperture, float image_distance, float max_CoC, float plane_in_focus_distance );
         
         // HDR
 

@@ -29,6 +29,10 @@ reflection_forward basic.vs reflection_forward.fs
 reflection_fbo quad.vs reflection_fbo.fs
 
 decal basic.vs decal.fs
+// Depth of field
+compute_coc quad.vs compute_coc.fs
+dof quad.vs dof.fs
+
 // ----------------------GET PARAMETERS-----------------------------
 \get_parm_from_vs
 
@@ -1518,6 +1522,115 @@ void main()
 	gl_FragColor = vec4(irradiance, transparency);
 	
 }
+
+\compute_coc.fs
+varying vec2 v_uv;
+
+uniform float u_camera_aperture;
+uniform float u_image_distance;
+uniform vec2 u_focus_point;
+uniform float u_max_coc;
+uniform sampler2D u_depth_texture;
+uniform vec2 u_camera_nearfar;
+uniform float u_plane_in_focus;
+
+void main()
+{	
+	float n = u_camera_nearfar.x;
+	float f = u_camera_nearfar.y;
+
+	/*
+	// It finds the distance of the point in the middle to force the focus at that distance. However, for some reason is not working this approach. 
+	// Plane in focus
+	float plane_in_focus = texture2D(u_depth_texture, floor(u_focus_point) + 0.005).x;
+	plane_in_focus = n * (plane_in_focus + 1.0) / (f + n - plane_in_focus * (f - n)); // Linearizing and get the truth z
+	plane_in_focus = plane_in_focus*(f-n) + n; // Setting values from [near, far]
+	*/
+	float plane_in_focus = u_plane_in_focus;	
+
+
+	// object distance
+	float object_distance = texture2D(u_depth_texture, v_uv).x;
+	object_distance = n * (object_distance + 1.0) / (f + n - object_distance * (f - n)); // Linearizing and get the truth z
+	object_distance = object_distance*(f-n) + n; // Setting values from [near, far]
+
+	// Compute focal length
+	float focal_length = plane_in_focus * object_distance / (plane_in_focus + object_distance);
+
+	float CoC = u_camera_aperture * focal_length * (plane_in_focus - object_distance);
+	CoC /= (object_distance * (plane_in_focus - focal_length));
+	CoC = abs(CoC);
+
+	// to avoid large values of CoC we clamp it 
+	float normalized_CoC = CoC / u_max_coc; // Passing from 0 to 1
+	normalized_CoC = clamp(normalized_CoC, 0.0, 1.0);
+
+	gl_FragData[0].xyz = vec3(normalized_CoC);
+
+	// To see where is the center point
+	/*float radius_center = 10.0;
+	if(length(gl_FragCoord.xy - u_focus_point) <= radius_center){
+		gl_FragData[0].xyz = vec3(1.0, 0.0, 0.0);
+	}*/
+
+}
+
+
+\dof.fs
+varying vec2 v_uv;
+
+uniform float u_max_coc;
+uniform sampler2D u_illumination_texture;
+uniform sampler2D u_coc_texture;
+uniform vec2 u_iRes;
+
+#define MAX_COC 20
+
+void main()
+{	
+	vec3 sum_samples = vec3(0.0);
+
+	// Denormalizing u_coc_texture since it has values in range [0, 1]. We want to have [0, u_max_coc]
+	float max_coc_factor = texture2D(u_coc_texture, v_uv).x; // it's in range [0,1]
+	float max_coc = max_coc_factor * u_max_coc;
+
+	// Counter of the number of samples used
+	float num_samples = 0.0;
+
+	for(int i = 0; i < MAX_COC; i++){
+		if (i > int(max_coc)){
+			break;
+		}
+
+		for(int j = 0; j < MAX_COC; j++){
+			if(j > int(max_coc)){
+				break;
+			}
+			// Find the uvs of the neightbour pixels
+			vec2 uv_sample = vec2(0.0);
+			uv_sample.x = (gl_FragCoord.x + float(i) - max_coc/2.0) * u_iRes.x ;
+			uv_sample.y = (gl_FragCoord.y + float(j) - max_coc/2.0) * u_iRes.y ;
+			
+			// Sum the value of the neightbour pixels
+			sum_samples += texture2D(u_illumination_texture, uv_sample).xyz;
+
+			// Update the number of samples used
+			num_samples ++;
+		}
+	}
+
+	vec3 blured_pixel = sum_samples / num_samples;
+	
+	// In the case that the circle of confusion is equal to zero, we choose the pixel
+	if (num_samples == 0.0){
+		blured_pixel = texture2D(u_illumination_texture, v_uv).xyz;
+	}
+
+	gl_FragColor = vec4(blured_pixel, max_coc_factor);
+
+}
+
+
 
 // -------------------------------------------------------------------------------------------------------------------------
 

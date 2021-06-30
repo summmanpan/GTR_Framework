@@ -431,6 +431,8 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
 		case SDLK_8: renderer->show_volumetric_rendering = !renderer->show_volumetric_rendering; break;
 	
 	
+        case SDLK_9: renderer->show_dof = !renderer->show_dof; break;
+
 	}
 
 

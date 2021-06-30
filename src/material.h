@@ -30,7 +30,9 @@ namespace GTR {
         PROBE,
 		DEPTH_SHADOW,
 		SKYBOX,
-		CUBEMAP
+		CUBEMAP,
+        FX,
+        ILLUMINATION
 	};
 
 	struct Sampler {
