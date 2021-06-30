@@ -16,7 +16,7 @@
 //** PARSING GLTF IS UGLY
 std::string base_folder;
 
-#ifdef _DEBUGdsdsd
+#ifdef _DEBUG
 	bool load_textures = false; //must textures be loadead?
 #else
 	bool load_textures = true; //must textures be loadead?

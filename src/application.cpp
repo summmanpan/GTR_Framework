@@ -26,7 +26,7 @@ GTR::BaseEntity* selected_entity = nullptr;
 FBO* fbo = nullptr;
 Texture* texture = nullptr;
 
-float cam_speed = 20;
+float cam_speed = 60;
 
 Mesh mesh;
 
@@ -119,8 +119,12 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 	//hdre->Get("data/night.hdre"); // look!!!!!!!!!!!
 
 	if(hdre->load("data/night.hdre"))
-		scene->environment = GTR::CubemapFromHDRE("data/night.hdre");
-		
+		scene->environment_texture = GTR::CubemapFromHDRE("data/night.hdre");
+	int numberRprobes = 5;
+	renderer->createReflectionProbes(scene, numberRprobes);
+
+
+
 	SDL_ShowCursor(!mouse_locked); //hide or show the mouse
 }
 
@@ -343,6 +347,8 @@ void Application::renderDebugGUI(void)
 	ImGui::Checkbox("SHOW_AO_DEFERRED", &renderer->show_ao_deferred);
 	ImGui::Checkbox("SHOW_IRRADIANCE", &renderer->show_irradiance);
 	ImGui::Checkbox("SHOW PROBES", &renderer->show_probes);
+	ImGui::Checkbox("SHOW REFLECTION", &renderer->show_reflectionProbeMesh);
+
 	//add info to the debug panel about the camera
 	if (ImGui::TreeNode(camera, "Camera")) {
 		camera->renderInMenu();
@@ -416,7 +422,12 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
             
         case SDLK_z: renderer->show_irradiance = !renderer->show_irradiance; break;
         case SDLK_3: renderer->show_probes = !renderer->show_probes; break;
-
+			
+		case SDLK_4: renderer->updateReflectionProbes(scene); break;
+		case SDLK_5: renderer->show_reflectionProbe = !renderer->show_reflectionProbe; break;
+		case SDLK_6: renderer->show_reflectionProbeMesh = !renderer->show_reflectionProbeMesh; break;
+			
+	
 	}
 
 
