@@ -28,7 +28,9 @@ namespace GTR {
 		OPACITY,
 		DISPLACEMENT,
         PROBE,
-		DEPTH_SHADOW
+		DEPTH_SHADOW,
+        FX,
+        ILLUMINATION
 	};
 
 	struct Sampler {
