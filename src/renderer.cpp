@@ -142,9 +142,9 @@ void Renderer::renderScene(GTR::Scene* scene, Camera* camera)
 		
 		if (show_reflectionProbe) {
 			renderReflectionProbes(scene, camera);
-			
 		}
 		if (show_reflectionProbeMesh) {
+			updateReflectionProbes(scene);
 			renderReflectionProbesMeshes(scene, camera);
 		}
 			
