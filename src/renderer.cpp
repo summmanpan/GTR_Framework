@@ -76,7 +76,7 @@ GTR::Renderer::Renderer()
 }
 
 // render in texture
-void Renderer::render2FBO(GTR::Scene* scene, Camera* camera) {
+void Renderer::renderMain(GTR::Scene* scene, Camera* camera) {
 	
 	
 	renderScene(scene, camera);
@@ -352,9 +352,9 @@ void GTR::Renderer::createGbuffers(int width, int height, std::vector <RenderCal
 	gbuffers_fbo.enableAllBuffers();
 
 
-	//------------------render skybox 
-	if (scene->environment_texture)
-		renderSkybox(scene->environment_texture, camera);
+	//------------------render skybox ??
+	//if (scene->environment_texture)
+	//	renderSkybox(scene->environment_texture, camera);
 
 
 	for (int i = 0; i < rendercalls.size(); i++)//render all
@@ -1121,9 +1121,8 @@ void SSAOFX::applyEffect(Texture* Zbuffer, Texture* normal_buffer, Camera* camer
 	//we will need the viewprojection to obtain the uv in the depthtexture of any random position of our world
 	
 	shader->setUniform("u_viewprojection", camera->viewprojection_matrix );
-	Matrix44 invp = camera->viewprojection_matrix;
-	invp.inverse();
-	shader->setUniform("u_inverse_viewprojection", invp);
+	
+	shader->setUniform("u_inverse_viewprojection", camera->inverse_viewprojection_matrix);
 
 	shader->setUniform("u_iRes", Vector2(1.0 / (float)Zbuffer->width, 1.0 / (float)Zbuffer->height));
 	shader->setUniform("u_camera_nearfar", Vector2(camera->near_plane, camera->far_plane));
@@ -1351,10 +1350,10 @@ void Renderer::uploadIrradianceUniforms(Shader* shader, Camera* camera) {
     int width = Application::instance->window_width;
     int height = Application::instance->window_height;
     
-    Vector2 iRes = Vector2(1.0 / (float)width, 1.0 / (float)height);
     
-    shader->setUniform("u_iRes", iRes);
-    shader->setUniform("u_inverse_viewprojection", inv_vp);
+    
+    shader->setUniform("u_iRes", Vector2(1.0 / (float)width, 1.0 / (float)height));
+    shader->setUniform("u_inverse_viewprojection", camera->inverse_viewprojection_matrix);
     shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, GTR::eChannels::DEPTH); // We use the depth texture to reconstruct the 3D world position in the shader
     shader->setTexture("u_normal_texture", gbuffers_fbo.color_textures[1], GTR::eChannels::NORMAL);
     shader->setTexture("u_color_texture", gbuffers_fbo.color_textures[0], GTR::eChannels::ALBEDO);
@@ -1408,11 +1407,8 @@ void Renderer::volumetricRendering(Scene* scene, Camera* camera){
         shader->enable();
         light->uploadToShader(shader);
         shader->setUniform("u_show_shadows", show_shadows);
-        
-        Matrix44 inv_vp = camera->viewprojection_matrix;
-        inv_vp.inverse();
-        
-        shader->setUniform("u_inverse_viewprojection", inv_vp);
+           
+        shader->setUniform("u_inverse_viewprojection", camera->inverse_viewprojection_matrix);
         shader->setUniform("u_iRes", iRes);
         shader->setUniform("u_camera_position", camera->eye);
         shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, eChannels::DEPTH);

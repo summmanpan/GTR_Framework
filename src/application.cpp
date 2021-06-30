@@ -181,7 +181,7 @@ void Application::render(void)
 	//renderer->renderPrefab( model, prefab, camera );
 
 	//renderer->renderScene(scene, camera);
-	renderer->render2FBO(scene, camera);
+	renderer->renderMain(scene, camera);
 
 	/*
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -341,13 +341,14 @@ void Application::renderDebugGUI(void)
 	ImGui::ColorEdit3("BG color", scene->background_color.v);
 	ImGui::ColorEdit3("Ambient Light", scene->ambient_light.v);
 	ImGui::Combo("Pipeline", (int*) &renderer->pipeline_mode, "FORWARD\0DEFERRED\0", 2);
-	ImGui::Checkbox("SHOW_SHADOWMAPS", &renderer->show_shadowmap);
-	ImGui::Checkbox("SHOW_GBUFFERS", &renderer->show_gbuffers);
-	ImGui::Checkbox("SHOW_AO", &renderer->show_ao);
-	ImGui::Checkbox("SHOW_AO_DEFERRED", &renderer->show_ao_deferred);
-	ImGui::Checkbox("SHOW_IRRADIANCE", &renderer->show_irradiance);
-	ImGui::Checkbox("SHOW PROBES", &renderer->show_probes);
-	ImGui::Checkbox("SHOW REFLECTION", &renderer->show_reflectionProbeMesh);
+	ImGui::Checkbox("Shadow on/off", &renderer->show_shadowmap);
+	ImGui::Checkbox("Show shadowmap", &renderer->show_shadowmap);
+	ImGui::Checkbox("show gbuffers", &renderer->show_gbuffers);
+	ImGui::Checkbox("show AO", &renderer->show_ao);
+	ImGui::Checkbox("show AO in deferred", &renderer->show_ao_deferred);
+	ImGui::Checkbox("Show Irrandiance", &renderer->show_irradiance);
+	ImGui::Checkbox("Show Irradiance Probes", &renderer->show_probes);
+	ImGui::Checkbox("Show Reflection", &renderer->show_reflectionProbeMesh);
 
 	//add info to the debug panel about the camera
 	if (ImGui::TreeNode(camera, "Camera")) {
@@ -425,9 +426,9 @@ void Application::onKeyDown( SDL_KeyboardEvent event )
         case SDLK_3: renderer->show_probes = !renderer->show_probes; break;
 			
 		case SDLK_4: renderer->updateReflectionProbes(scene); break;
-		case SDLK_5: renderer->show_reflectionProbe = !renderer->show_reflectionProbe; break;
-		case SDLK_6: renderer->show_reflectionProbeMesh = !renderer->show_reflectionProbeMesh; break;
-		case SDLK_7: renderer->show_volumetric_rendering = !renderer->show_volumetric_rendering; break;
+		case SDLK_6: renderer->show_reflectionProbe = !renderer->show_reflectionProbe; break;
+		case SDLK_7: renderer->show_reflectionProbeMesh = !renderer->show_reflectionProbeMesh; break;
+		case SDLK_8: renderer->show_volumetric_rendering = !renderer->show_volumetric_rendering; break;
 	
 	
 	}

@@ -132,7 +132,7 @@ namespace GTR {
 		//ctor
 		Renderer();
 			
-		void render2FBO(GTR::Scene* scene, Camera* camera);
+		void renderMain(GTR::Scene* scene, Camera* camera);
 
 		//renders several elements of the scene
 		void renderScene(GTR::Scene* scene, Camera* camera);
