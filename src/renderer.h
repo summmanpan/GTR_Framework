@@ -203,12 +203,12 @@ namespace GTR {
 		void renderDecals(Camera* camera);
 
 
-		//---
-		void createReflectionProbes(Scene* scene, int numb);
+		//---Reflecrion probes
+		void iniReflectionProbes(Scene* scene);
 		void updateReflectionProbes(Scene* scene);
 		void renderReflectionProbesMeshes(Scene* scene, Camera* camera);
 		void renderReflectionProbes(GTR::Scene* scene, Camera* camera);
-		void createReflectionFBO(float width, float height, Scene* scene, Camera* camera);
+		//void createReflectionFBO(float width, float height, Scene* scene, Camera* camera);
 
 		ReflectionProbeEntity* nearsRProbe(std::vector<ReflectionProbeEntity*> reflection_vector, Vector3 center_bbox);
 	};

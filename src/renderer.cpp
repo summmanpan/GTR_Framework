@@ -1483,21 +1483,16 @@ void GTR::Renderer::renderDecals(Camera* camera)
 
 //-----
 
-void GTR::Renderer::createReflectionProbes(GTR::Scene* scene, int number) {
+void GTR::Renderer::iniReflectionProbes(GTR::Scene* scene) {
 	
 	for (int i = 0; i < scene->reflection_probes.size(); ++i) {
-		//create the probe
+	
 		ReflectionProbeEntity* probe = scene->reflection_probes[i];
-		//set it up with corresponding attributes
-		
 		probe->cubemap = new Texture();
 		probe->cubemap->createCubemap(512, 512, NULL, GL_RGBA, GL_UNSIGNED_INT, false); //Create texture
 
-		//add it to the list
-		//scene->reflection_probes.push_back(probe);
 	}
 	
-
 }
 
 
@@ -1575,13 +1570,7 @@ void GTR::Renderer::renderReflectionProbesMeshes( GTR::Scene* scene, Camera * ca
 		mesh = rc.mesh;
 		rprobe = rc.nearest_probe;
 		Material* material = rc.material;
-		//rprobe = Scene::instance->reflection_probes[0];
-
-		// pasamos model y wp
-		/*Matrix44 m;
-		m.translate(rprobe->pos.x, rprobe->pos.y, rprobe->pos.z);
-		m.scale(10, 10, 10);*/
-
+		
 		shader->setUniform("u_model", rc.model);
 		shader->setTexture("u_reflection_texture", rprobe->cubemap, GTR::eChannels::CUBEMAP);
 
@@ -1593,8 +1582,6 @@ void GTR::Renderer::renderReflectionProbesMeshes( GTR::Scene* scene, Camera * ca
 
 	}
 
-	//fillAndUploadProbesTextureToGPU();
-	//this->updateIrradiance = false;
 }
 
 
@@ -1638,35 +1625,3 @@ void GTR::Renderer::renderReflectionProbes( GTR::Scene* scene, Camera * camera) 
 
 }
 
-
-void GTR::Renderer::createReflectionFBO(float width, float height, Scene* scene, Camera* camera) {
-
-
-	Mesh* mesh = Mesh::getQuad();
-
-	Shader* shader = Shader::Get("reflection_fbo");
-	
-	shader->setTexture("u_color_texture", gbuffers_fbo.color_textures[0], GTR::eChannels::ALBEDO);
-	shader->setTexture("u_normal_texture", gbuffers_fbo.color_textures[1], GTR::eChannels::NORMAL);
-	shader->setTexture("u_extra_texture", gbuffers_fbo.color_textures[2], GTR::eChannels::EMISSIVE);
-	shader->setTexture("u_depth_texture", gbuffers_fbo.depth_texture, GTR::eChannels::DEPTH);
-	shader->setTexture("u_environment_texture", scene->environment_texture, 5);
-
-
-	shader->setUniform("u_camera_position", camera->eye);
-	shader->setUniform("u_inverse_viewprojection", camera->inverse_viewprojection_matrix);
-	Vector2 iRes = Vector2(1.0 / (float)width, 1.0 / (float)height);
-	shader->setUniform("u_iRes", iRes);
-	
-
-	glDisable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_ONE, GL_ONE);
-
-	mesh->render(GL_TRIANGLES);
-
-	glDisable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-
-
-}

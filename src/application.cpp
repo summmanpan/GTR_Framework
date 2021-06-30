@@ -120,8 +120,8 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 
 	if(hdre->load("data/night.hdre"))
 		scene->environment_texture = GTR::CubemapFromHDRE("data/night.hdre");
-	int numberRprobes = 5;
-	renderer->createReflectionProbes(scene, numberRprobes);
+	
+	renderer->iniReflectionProbes(scene);
 
 
 
