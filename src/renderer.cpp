@@ -644,7 +644,10 @@ void Renderer::getRCsfromNode(const Matrix44& prefab_model, GTR::Node* node, Cam
 			rc.material = node->material;
 			rc.mesh = node->mesh;
 
-			if (Scene::instance->reflection_probes.size() != 0) {
+			
+			if (Scene::instance->reflection_probes.size() != 0 ) {
+
+
 				rc.nearest_probe = nearsRProbe(Scene::instance->reflection_probes, world_bounding.center);
 			}
 
@@ -680,6 +683,11 @@ ReflectionProbeEntity* Renderer::nearsRProbe(std::vector<ReflectionProbeEntity*>
 
 		float current_min_dist = rprobe->model.getTranslation().distance(center_bbox);
 		
+		/*
+		float max_dist = 1000;
+		if (current_min_dist > max_dist)
+			return NULL;
+		*/
 
 		if (min_dist < current_min_dist)
 			continue;
