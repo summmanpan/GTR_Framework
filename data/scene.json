@@ -122,7 +122,33 @@
 			"max_dist": 1000,
 			"cast_shadows": true,
 			"light_type": "DIRECTIONAL"
+		},
+
+		{
+			"name": "reflection_prefab_car1",
+			"type": "REFLECTION_PROBE",
+			"position": [ 0, 36, -16 ]
+
+		},
+		{
+			"name": "reflection_prefab_car2",
+			"type": "REFLECTION_PROBE",
+			"position": [ -9, 8, 97 ]
+
+		},
+		{
+			"name": "reflection_prefab_trash",
+			"type": "REFLECTION_PROBE",
+			"position": [110, 16, 104 ]
+
+		},
+		{
+			"name": "reflection_prefab_house",
+			"type": "REFLECTION_PROBE",
+			"position": [ 160, 57, -173 ]
+
 		}
+
 
 
 	]

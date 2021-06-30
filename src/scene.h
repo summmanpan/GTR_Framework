@@ -105,12 +105,13 @@ namespace GTR {
 	{
 	public:
 		
-		Vector3 pos;
+		
 		Texture* cubemap;
 		ReflectionProbeEntity();
 		
-		//virtual void renderInMenu();
+		virtual void renderInMenu();
 		virtual void configure(cJSON* json);
+		
 	};
 
 	
@@ -140,13 +141,16 @@ namespace GTR {
 		Vector3 ambient_light;
 		float max_dist_ao;
 		Camera main_camera;
-		Texture* environment;
+		Texture* environment_texture;
 
+		
 		Scene();
 
 		std::string filename;
 		std::vector<BaseEntity*> entities;
 		std::vector<LightEntity*> light_entities;
+		//container for the probes
+		std::vector<ReflectionProbeEntity*> reflection_probes;
 
 		void clear();
 		void addEntity(BaseEntity* entity);

@@ -20,10 +20,15 @@ applyHDRgamma quad.vs applyHDRgamma.fs
 probe basic.vs probe.fs //basic ya q es una esfera que lo vamos a proyectar
 irradiance_sh quad.vs irradiance_sh.fs 
 skybox basic.vs skybox.fs
-decal basic.vs decal.fs
 
 volumetric_rendering quad.vs volumetric_rendering.fs
 
+reflection_probe basic.vs reflection_probe.fs
+reflection_forward basic.vs reflection_forward.fs 
+
+reflection_fbo quad.vs reflection_fbo.fs
+
+decal basic.vs decal.fs
 // ----------------------GET PARAMETERS-----------------------------
 \get_parm_from_vs
 
@@ -286,11 +291,6 @@ vec4 get_occlusion( vec2 v_uv, sampler2D u_metallic_roughness_texture, sampler2D
 	return vec4( oc_fac, oc_fac, oc_fac, 1.0 ); 
 }
 
-vec4 get_metallic_roughness( vec2 v_uv, sampler2D u_metallic_roughness_texture )
-{
-	vec4 mr_fac = texture2D( u_metallic_roughness_texture , v_uv) ;
-	return mr_fac; 
-}
 
 // ----------------------PBR functions-----------------------------
 
@@ -456,46 +456,6 @@ float dither4x4(vec2 position, float brightness)
   return brightness < limit ? 0.0 : 1.0;
 }
 
-//----------------------Compute irradiance/probes functions-----------------------------
-
-\find_probe_row_of_texture
-
-//computing nearest probe index based on world position
-
-vec3 irr_range = u_irr_end - u_irr_start;
-
-vec3 irr_local_pos = clamp( world_position - u_irr_start 	+ N * u_irr_normal_distance, vec3(0.0), irr_range );
-
-//convert from world pos to grid pos
-vec3 irr_norm_pos = irr_local_pos / u_irr_delta;
-
-//round values as we cannot fetch between rows for now
-vec3 local_indices = floor(irr_norm_pos + 0.5); //round( irr_norm_pos ); Lo sustituyo por esta función ya que en OpenGL 2.1 no hay la función round()
-
-//compute in which row is the probe stored
-float row = local_indices.x + local_indices.y * u_irr_dims.x + local_indices.z * u_irr_dims.x * u_irr_dims.y;
-
-//find the UV.y coord of that row in the probes texture
-float row_uv = (row + 1.0) / (u_num_probes + 1.0); 
-
-
-\get_irradiance
-
-	SH9Color sh;
-	
-	
-	#include "find_probe_row_of_texture"
-	
-	//fill the coefficients
-	const float d_uvx = 1.0 / 9.0;
-	for(int i = 0; i < 9; ++i)
-	{
-		vec2 coeffs_uv = vec2( (float(i)+0.5) * d_uvx, row_uv );
-		sh.c[i] = texture2D( u_probes_texture, coeffs_uv ).xyz;
-	}
-
-	vec4 irradiance = vec4( ComputeSHIrradiance( N, sh ) , 1.0);
-
 
 // -------------------------------------------------------------------------------------------------------------------------
 \basic.vs
@@ -637,6 +597,9 @@ uniform vec4 u_color;
 uniform vec3 u_emissive_factor;
 uniform float u_alpha_cutoff;
 uniform vec3 u_ambient_light;
+uniform vec3 u_camera_position;
+//uniform bool u_rendering_reflection_flag;
+//uniform samplerCube u_reflection_texture;
 
 #include "get_parm_from_vs"
 #include "get_lights_uniforms"
@@ -664,6 +627,10 @@ void main()
 	light += u_ambient_light * occ.xyz ;
 	
 	vec3 N = get_normal( v_normal,  v_world_position, v_uv, u_normal_texture);
+
+	
+	
+
 	vec3 L = vec3(0.0);
 	float NdotL = 0.0;
 	float att_factor = compute_attfactor(  u_light_position, v_world_position, u_light_maxdist);
@@ -671,10 +638,26 @@ void main()
 	
 	#include "compute_light_phong"
 	
+	/*
+
+	vec3 V = v_world_position - u_camera_position;
+	vec3 R = reflect(V,N);
+
+		vec3 N = normalize(v_normal);
+	vec3 V = v_world_position - u_camera_position;
+	vec3 R = reflect(V,N);
+	//compute the reflection 
+	// vec3 reflection = baseColor * textureLod( u_environment_texture, R, roughness * 5.0 ).xyz;
+
+	gl_FragColor = texture( u_texture, R); //vec4(1,0,0,1);//
+	
+	*/
+
 
 	color.xyz *= light;
 	color.xyz += u_emissive_factor * ( texture2D(u_emissive_texture, uv ).xyz );
 	gl_FragColor = color;
+	//gl_FragColor = texture( u_texture, R);
 }
 
 //--------------------------------------------------------------------------------------------------------------------------
@@ -799,7 +782,7 @@ void main()
 	vec3 emissive = u_emissive_factor * texture2D(u_emissive_texture, uv ).xyz ;
 	vec3 N = get_normal( v_normal,  v_world_position, v_uv, u_normal_texture); //N is in range [-1...1]
 	//vec3 N = normalize(v_normal);	
-	vec4 metallic_roughness = get_metallic_roughness(v_uv, u_metallic_roughness_texture);
+	vec4 metallic_roughness = texture2D( u_metallic_roughness_texture, v_uv);
 	
 	color.a = metallic_roughness.b; //alpha = metalness
 	
@@ -991,8 +974,6 @@ void main()
 	// If it's a point light, it will have spotFactor = 1
 	light +=  spotFactor * att_factor * NoL  * u_light_color * u_light_intensity * shadow_factor; //diffspecular_light
 	
-	
-	//light += irradiance;
 	color.xyz *= light;
 	gl_FragData[0] = vec4(color, 1.0 ) ;
 	
@@ -1306,7 +1287,7 @@ void main()
 	sh.c[7] = u_coeffs[7];
 	sh.c[8] = u_coeffs[8];
 	
-
+	// for degub:
 	/* 
 	SH9Color sh;
 	#include "find_probe_row_of_texture"
@@ -1329,10 +1310,6 @@ void main()
 // -------------------------------------------------------------------------------------------------------------------------
 
 \irradiance_sh.fs
-
-
-//varying vec3 v_normal;
-//varying vec3 v_uv;
 
 #include "get_SHs_functions"
 #include "get_irradiance_functions"
@@ -1370,8 +1347,8 @@ void main()
 	vec3 local_indices = floor(irr_norm_pos);
 	
 	// Compute the irradiance
-	vec3 irradiance = getIrradianceInterpolated(local_indices, irr_norm_pos, u_irr_dims, u_num_probes, u_probes_texture, N);
-	//vec3 irradiance = getIrradiance(local_indices, u_irr_dims, u_num_probes, u_probes_texture, N); //This is the uninterpolated version
+	//vec3 irradiance = getIrradianceInterpolated(local_indices, irr_norm_pos, u_irr_dims, u_num_probes, u_probes_texture, N);
+	vec3 irradiance = getIrradiance(local_indices, u_irr_dims, u_num_probes, u_probes_texture, N); //This is the uninterpolated version
 	
 	gl_FragColor.xyz = color * irradiance;
 }
@@ -1594,8 +1571,7 @@ void main()
 	else if (u_decal_texture_type == 1){
 		normal.xyz = decal.xyz;
 	}
-	
-	
+
 	//albedo = vec4(1, 0, 0, 1);
 	gl_FragData[0] = albedo ;
 	gl_FragData[1] = normal ;
@@ -1607,8 +1583,6 @@ void main()
 \skybox.fs
 
 varying vec3 v_world_position; 
-varying vec4 v_color;
-
 
 uniform samplerCube u_texture;
 uniform vec3 u_camera_position;
@@ -1617,7 +1591,76 @@ uniform vec3 u_camera_position;
 void main()
 {
 	vec3 V = v_world_position - u_camera_position;
-	//vec4 color = texture2D( u_texture, V );
-	gl_FragColor = vec4(1.0 ,0.0 ,0.0 , 1.0); //color;
+	gl_FragColor = texture( u_texture, V);
+	
 } 
 
+// -------------------------------------------------------------------------------------------------------------------------
+\reflection_probe.fs
+
+varying vec3 v_world_position; 
+varying vec3 v_normal;
+
+uniform samplerCube u_reflection_texture;
+uniform vec3 u_camera_position;
+
+//out vec4 FragColor;
+
+void main()
+{	
+
+
+	vec3 N = normalize( v_normal);
+	vec3 V = normalize( u_camera_position - v_world_position) ;
+
+	vec3 R = reflect( - V , N);
+
+
+	//compute the reflection 
+	vec3 reflection = textureLod( u_reflection_texture, R, 0.0 ).xyz;
+
+	gl_FragColor = vec4( reflection , 1.0 ); //vec4(1,0,0,1); //
+	
+} 
+
+//---------------------------------------------------------------------------------------------------------------------------
+
+\reflection_forward.fs
+
+varying vec3 v_world_position; 
+varying vec3 v_normal;
+varying vec2 v_uv;
+
+
+uniform samplerCube u_reflection_texture;
+uniform sampler2D u_metallic_roughness_texture;
+uniform vec3 u_camera_position;
+
+
+//out vec4 FragColor;
+
+void main()
+{	
+
+	
+	vec3 N = normalize( v_normal);
+	vec3 V = normalize( u_camera_position - v_world_position) ;
+
+	vec3 R = reflect( - V , N);
+
+	vec4 metallic_roughness = texture2D(u_metallic_roughness_texture, v_uv);
+	
+	float roughness = metallic_roughness.g;
+	float metalness = metallic_roughness.b;
+
+
+	//compute the reflection 
+	vec3 reflection = textureLod( u_reflection_texture, R, roughness * 5.0 ).xyz;
+
+	//set the metalness as alpha
+	gl_FragColor = vec4( reflection , metalness);  // vec4(1,0,0,1); //
+	
+} 
+
+
+// -------------------------------------------------------------------------------------------------------------------------

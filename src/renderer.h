@@ -56,11 +56,14 @@ namespace GTR {
 		Material* material;
 		float dist2camera;
 
+		ReflectionProbeEntity* nearest_probe;
+
 		RenderCall() {
 			mesh = NULL;
 			material = NULL;
 			dist2camera = 0;
 			model.setIdentity();
+			nearest_probe = NULL;
 		}
 	};
 
@@ -88,15 +91,22 @@ namespace GTR {
 		FBO illumination_fbo;
 		FBO decals_fbo;
 		FBO irr_fbo; //irradiance
+		FBO* reflection_fbo;
+
 		SSAOFX ssao;
 		
 
 		//Textures
 		Texture* ao_buffer;
+
+		//Texture* albedo_texture_aux;
+		//Texture* depth_texture_aux;
+		//Texture* normal_texture_aux;
+
 	
 		//Probe
 		std::vector<sProbe> probes;
-		Vector3 probe_dim; //nº of probe on each 3 dim 
+		Vector3 probe_dim; //nï¿½ of probe on each 3 dim 
 		Vector3 probe_start_pos;
 		Vector3 probe_end_pos;
 		Vector3 probe_delta;
@@ -116,6 +126,8 @@ namespace GTR {
         bool show_irradiance;
         bool show_probes;
         bool show_volumetric_rendering;
+		bool show_reflectionProbe;
+		bool show_reflectionProbeMesh;
 
 		//ctor
 		Renderer();
@@ -135,12 +147,13 @@ namespace GTR {
 
 		void uploadTextures(Material* material, Shader* shader);
 
+
 		//to render one mesh given its material and transformation matrix
 		void renderMeshWithMaterial(eRenderMode mode, const Matrix44 model, Mesh* mesh, GTR::Material* material, Camera* camera);
 
 		void renderForward(GTR::Scene* scene, std::vector<RenderCall>& rendercalls, Camera* camera, bool apply_clear);
 
-		void createGbuffers(int width, int height, std::vector<RenderCall>& rendercalls, Camera* camera);
+		void createGbuffers(int width, int height, std::vector<RenderCall>& rendercalls, Camera* camera, GTR::Scene* scene);
 
 		void createDecalsFBO(int width, int height, Camera* c );
 
@@ -194,6 +207,15 @@ namespace GTR {
 
 		void renderDecals(Camera* camera);
 
+
+		//---Reflecrion probes
+		void iniReflectionProbes(Scene* scene);
+		void updateReflectionProbes(Scene* scene);
+		void renderReflectionProbesMeshes(Scene* scene, Camera* camera);
+		void renderReflectionProbes(GTR::Scene* scene, Camera* camera);
+		//void createReflectionFBO(float width, float height, Scene* scene, Camera* camera);
+
+		ReflectionProbeEntity* nearsRProbe(std::vector<ReflectionProbeEntity*> reflection_vector, Vector3 center_bbox);
 	};
 
 	Texture* CubemapFromHDRE(const char* filename);

@@ -11,7 +11,7 @@ GTR::Scene::Scene()
 {
 	instance = this;
 	this->max_dist_ao = 0;
-	this->environment = NULL;
+	this->environment_texture = NULL;
 }
 
 void GTR::Scene::clear()
@@ -27,6 +27,13 @@ void GTR::Scene::clear()
 
 void GTR::Scene::addEntity(BaseEntity* entity)
 {
+	if (entity->entity_type == GTR::eEntityType::REFLECTION_PROBE) {
+
+		ReflectionProbeEntity* rprobe = (ReflectionProbeEntity*)entity;
+		
+		reflection_probes.push_back(rprobe);
+	}
+
 	entities.push_back(entity); 
 	entity->scene = this;
 }
@@ -134,6 +141,8 @@ GTR::BaseEntity* GTR::Scene::createEntity(std::string type)
 		return new GTR::LightEntity();
 	else if (type == "DECAL")
 		return new GTR::DecalEntity();
+	else if(type == "REFLECTION_PROBE")
+		return new GTR::ReflectionProbeEntity();
 	return NULL;
 }
 
@@ -337,7 +346,6 @@ void GTR::LightEntity::renderInMenu()
 			ImGui::SliderFloat("Bias factor", &shadow_bias, 0, 1);
 		}
 		
-
 	#endif
 }
 
@@ -363,20 +371,22 @@ void GTR::DecalEntity::configure(cJSON* json) {
 		else if (textureType == "normal") {
 			this->texture_type = eDecalTextureType::normal;
 		}
-		
-
 	}
-
 }
 
 GTR::ReflectionProbeEntity::ReflectionProbeEntity()
 {
 	entity_type = REFLECTION_PROBE;
-	pos.set(0, 0, 0);
+	
 	cubemap = NULL;
 }
 
 void GTR::ReflectionProbeEntity::configure(cJSON* json)
+{
+	
+}
+
+void GTR::ReflectionProbeEntity::renderInMenu() 
 {
 	
 }
