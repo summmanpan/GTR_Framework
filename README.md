@@ -3,6 +3,9 @@ OpenGL C++ Framework used for the Grafics a Temps Real course at Universitat Pom
 
 It imports GLTF and PNGs.
 
+# Stable branch
+The branch in-develop is the main branch.
+
 ## Compile
 
 ### Windows
